@@ -55,8 +55,8 @@ class MyGame(arcade.Window):
         )
 
         arcade.draw_lrwh_rectangle_textured(
-            self.width//2 - self.width//4,
-            self.height//2 - self.height//4,
+            self.width//4,
+            self.height//4,
             self.width//2,
             self.height//2,
             self.pond
