@@ -8,6 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = ">=3.9,<3.10"
 arcade = "^2.5.5"
+pillow
 
 [tool.poetry.dev-dependencies]
 flake8 = "~=3.8"
