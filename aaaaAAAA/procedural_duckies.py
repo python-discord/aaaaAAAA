@@ -14,6 +14,10 @@ Color = tuple[int, int, int]
 DUCKY_SIZE = (499, 600)
 ASSETS_PATH = Path("img/duck-builder")
 
+HAT_CHANCE = .7
+EQUIPMENT_CHANCE = .4
+OUTFIT_CHANCE = .5
+
 
 def make_ducky() -> ProceduralDucky:
     return ProceduralDuckyGenerator().generate()
@@ -23,6 +27,9 @@ class ProceduralDuckyGenerator:
     templates = {
         int(filename.name[0]): Image.open(filename) for filename in (ASSETS_PATH / "silverduck templates").iterdir()
     }
+    hats = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/hats").iterdir()]
+    equipments = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/equipment").iterdir()]
+    outfits = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/outfits").iterdir()]
 
     def __init__(self):
         self.output: Image.Image = Image.new("RGBA", DUCKY_SIZE, color=(0, 0, 0, 0))
@@ -39,6 +46,18 @@ class ProceduralDuckyGenerator:
         self.apply_layer(self.templates[2], self.colors.eye)
         self.apply_layer(self.templates[1], self.colors.eye)
 
+        if random.random() < HAT_CHANCE:
+            self.apply_layer(random.choice(self.hats))
+            self.has_hat = True
+
+        if random.random() < EQUIPMENT_CHANCE:
+            self.apply_layer(random.choice(self.equipments))
+            self.has_equipment = True
+
+        if random.random() < OUTFIT_CHANCE:
+            self.apply_layer(random.choice(self.outfits))
+            self.has_outfit = True
+
         return ProceduralDucky(self.output, self.has_hat, self.has_equipment, self.has_outfit)
 
     def apply_layer(self, layer: Image.Image, recolor: Optional[Color] = None):
@@ -53,7 +72,7 @@ class ProceduralDuckyGenerator:
         hue = random.random()
         saturation = 1
 
-        hls_colors = [(hue, random.uniform(0.3, 0.9), saturation) for _ in range(4)]
+        hls_colors = [(hue, random.uniform(0.5, 0.9), saturation) for _ in range(4)]
 
         # Lower the eye saturation
         hls_colors[0] = (hls_colors[0][0], min(.9, hls_colors[0][1] + .4), hls_colors[0][2])
