@@ -4,7 +4,7 @@ This directory contains everything you need to build a procedural ducky!
 ## Silverduck templates
 In the `silverduck_templates` folder, you'll find the duck components rendered in a silvery gradient. These will be the templates we will paint with random colors to create ducks of random colors. We will simple overlay a transparent color block of the same size in order to make it look like it's purple or pink or whatever we want.
 
-These assets are exactly the same size, so you simply put them all in the same space and respect transparency. 
+These assets are exactly the same size, so you simply put them all in the same space and respect transparency.
 
 **The layer order must follow the numbers in the filenames** - 1 must be on top, and 5 at the very bottom.
 
