@@ -72,7 +72,7 @@ class ProceduralDuckyGenerator:
         hue = random.random()
         saturation = 1
 
-        hls_colors = [(hue, random.uniform(0.5, 0.9), saturation) for _ in range(4)]
+        hls_colors = [(hue, random.uniform(.7, .8), saturation) for _ in range(4)]
 
         # Lower the eye saturation
         hls_colors[0] = (hls_colors[0][0], min(.9, hls_colors[0][1] + .4), hls_colors[0][2])
