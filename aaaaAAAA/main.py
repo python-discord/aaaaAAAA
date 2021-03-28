@@ -33,6 +33,7 @@ class MyGame(arcade.Window):
     def setup(self) -> None:
         """Set up the game variables. Call to re-start the game."""
         self.background = arcade.load_texture("img/aaaaAAAA.png")
+        self.pond = arcade.load_texture("img/duck_pond.png")
 
         self.held_ducks = []
         self.held_ducks_original_pos = []
@@ -53,6 +54,13 @@ class MyGame(arcade.Window):
             0, 0, self.width, self.height, self.background
         )
 
+        arcade.draw_lrwh_rectangle_textured(
+            self.width//2 - self.width//4,
+            self.height//2 - self.height//4,
+            self.width//2,
+            self.height//2,
+            self.pond
+        )
         self.ducky_list.draw()
 
     def on_mouse_motion(self, x: float, y: float, delta_x: float, delta_y: float) -> None:
