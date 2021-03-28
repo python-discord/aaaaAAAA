@@ -33,7 +33,6 @@ class ProceduralDuckyGenerator:
         self.has_outfit = False
 
     def generate(self) -> ProceduralDucky:
-        print(self.colors)
         self.apply_layer(self.templates[5], self.colors.beak)
         self.apply_layer(self.templates[4], self.colors.body)
         self.apply_layer(self.templates[3], self.colors.wing)
