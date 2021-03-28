@@ -8,9 +8,9 @@ There will be ducks.
 
 We decided to use poetry for this game. For those unfamiliar with poetry, [here's](https://python-poetry.org/docs/#installation) a link to the docs!
 
-Running `poetry install` in the projects root directory will install all dependanies
+Running `poetry install` in the projects root directory will install all dependencies
 `poetry shell` will enter a shell
-`poetry update` will update your poetry lock file if you added new dependanies
+`poetry update` will update your poetry lock file if you added new dependencies
 
 `poetry run task start` will start the game, equivilent to `python -m aaaaAAAA`
 
