@@ -67,14 +67,19 @@ class MyGame(arcade.Window):
         ducks = arcade.get_sprites_at_point((x, y), self.ducky_list)
 
         # Are there any clicked?
-        if len(ducks) > 0:
+        if not ducks:
+            return
 
-            # Get the top one
+        if button == arcade.MOUSE_BUTTON_LEFT:
+            # Get the top one and move that
             primary_duck = ducks[-1]
 
             self.held_ducks = [primary_duck]
             self.held_ducks_original_pos = [self.held_ducks[0].position]
             self.pull_to_top(self.held_ducks[0])
+        else:
+            self.held_ducks = ducks
+            self.held_ducks_original_pos = [duck.position for duck in ducks]
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Called when a user releases a mouse button."""
