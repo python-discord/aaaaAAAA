@@ -5,7 +5,7 @@ from colorsys import hls_to_rgb
 from pathlib import Path
 from typing import Optional
 
-from PIL import Image
+from PIL import Image, ImageChops
 
 ProceduralDucky = namedtuple("ProceduralDucky", "image has_hat has_equipment has_outfit")
 DuckyColors = namedtuple("DuckyColors", "eye wing body beak")
@@ -33,17 +33,19 @@ class ProceduralDuckyGenerator:
         self.has_outfit = False
 
     def generate(self) -> ProceduralDucky:
-        self.apply_layer(self.templates[5])
-        self.apply_layer(self.templates[4])
-        self.apply_layer(self.templates[3])
-        self.apply_layer(self.templates[2])
-        self.apply_layer(self.templates[1])
+        print(self.colors)
+        self.apply_layer(self.templates[5], self.colors.beak)
+        self.apply_layer(self.templates[4], self.colors.body)
+        self.apply_layer(self.templates[3], self.colors.wing)
+        self.apply_layer(self.templates[2], self.colors.eye)
+        self.apply_layer(self.templates[1], self.colors.eye)
 
         return ProceduralDucky(self.output, self.has_hat, self.has_equipment, self.has_outfit)
 
     def apply_layer(self, layer: Image.Image, recolor: Optional[Color] = None):
         """Add the given layer on top of the ducky. Can be recolored with the recolor argument."""
-        # recolor is ignored for now
+        if recolor:
+            layer = ImageChops.multiply(layer, Image.new("RGBA", DUCKY_SIZE, color=recolor))
         self.output.alpha_composite(layer)
 
     @staticmethod
@@ -52,7 +54,17 @@ class ProceduralDuckyGenerator:
         hue = random.random()
         saturation = 1
 
-        colors = [hls_to_rgb(hue, light, saturation) for light in [random.uniform(0.7, 0.85) for _ in range(4)]]
+        hls_colors = [(hue, random.uniform(0.3, 0.9), saturation) for _ in range(4)]
+
+        # Lower the eye saturation
+        hls_colors[0] = (hls_colors[0][0], min(.9, hls_colors[0][1] + .4), hls_colors[0][2])
+        # Shift the saturation of the beck
+        hls_colors[3] = (hls_colors[3][0] + .1 % 1, hls_colors[3][1], hls_colors[3][2])
+
+        scalar_colors = [hls_to_rgb(*color_pair) for color_pair in hls_colors]
+        colors = (tuple(int(color * 256) for color in color_pair) for color_pair in scalar_colors)
+
+        colors = DuckyColors(*colors)
 
         return DuckyColors(*colors)
 
