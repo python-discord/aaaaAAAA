@@ -32,6 +32,7 @@ print('installed pyinstaller')
 call(['pyinstaller',
       '--add-data', '.' + pathsep + '.',
       '--windowed',
+      '--name', 'Protect the Pond! Quack the Case!',
       '--onefile',
       'aaaaAAAA/__main__.py'
       ])
