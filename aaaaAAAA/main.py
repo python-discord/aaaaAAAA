@@ -32,8 +32,8 @@ class MyGame(arcade.Window):
 
     def setup(self) -> None:
         """Set up the game variables. Call to re-start the game."""
-        self.background = arcade.load_texture("img/aaaaAAAA.png")
-        self.pond = arcade.load_texture("img/duck_pond.png")
+        self.background = arcade.load_texture("assets/aaaaAAAA.png")
+        self.pond = arcade.load_texture("assets/duck_pond.png")
 
         self.held_ducks = []
         self.held_ducks_original_pos = []
