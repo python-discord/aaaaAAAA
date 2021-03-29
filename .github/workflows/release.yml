@@ -34,7 +34,7 @@ jobs:
           poetry install
 
       - name: install pyinstaller from cloned repo
-        run: poetry run pip -e pyinstaller
+        run: poetry run pip install -e pyinstaller
 
       - name: call pyinstaller
         run: >
