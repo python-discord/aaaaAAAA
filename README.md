@@ -1,4 +1,4 @@
-![aaaaAAAA](https://github.com/python-discord/aaaaAAAA/raw/main/img/aaaaAAAA.png)
+![aaaaAAAA](https://github.com/python-discord/aaaaAAAA/raw/main/assets/aaaaAAAA.png)
 
 [Our staff team submission for PyWeek 31](https://pyweek.org/e/8SpaceIndents/)
 
