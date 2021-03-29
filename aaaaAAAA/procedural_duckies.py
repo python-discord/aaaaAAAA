@@ -91,7 +91,7 @@ class ProceduralDuckyGenerator:
 # A second argument can be given to seed the duck (that sounds a bit weird doesn't it)
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        random.seed(float(sys.argv[1]))
+        random.seed(sys.argv[1])
 
     ducky = make_ducky()
     print(*("{}: {}".format(key, value) for key, value in ducky._asdict().items()), sep="\n")
