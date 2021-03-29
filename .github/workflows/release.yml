@@ -6,11 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  generate:
-    strategy:
-      matrix:
-        platform: [windows-latest]
-    runs-on: ${{ matrix.platform }}
+  generate-windows:
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v2
