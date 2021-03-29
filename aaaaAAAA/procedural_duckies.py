@@ -66,14 +66,11 @@ class ProceduralDuckyGenerator:
             layer = ImageChops.multiply(layer, Image.new("RGBA", DUCKY_SIZE, color=recolor))
         self.output.alpha_composite(layer)
 
-
     @staticmethod
-    def make_color() -> tuple[float, float, float]:
+    def make_color(hue: float, dark_variant: bool) -> tuple[float, float, float]:
         """Make a nice hls color to use in a duck."""
-        hue = random.random()
         saturation = 1
         lightness = random.uniform(.5, .65)
-        dark_variant = random.choice([True, False])
         # green and blue do not like high lightness, so we adjust this depending on how far from blue-green we are
         # hue_fix is the square of the distance between the hue and cyan (0.5 hue)
         hue_fix = (1 - abs(hue - 0.5))**2
@@ -88,7 +85,9 @@ class ProceduralDuckyGenerator:
     @classmethod
     def make_colors(cls) -> DuckyColors:
         """Create a matching DuckyColors object."""
-        eye, wing, body, beak = (cls.make_color() for i in range(4))
+        hue = random.random()
+        dark_variant = random.choice([True, False])
+        eye, wing, body, beak = (cls.make_color(hue, dark_variant) for i in range(4))
 
         # Lower the eye light
         eye = (eye[0], min(.9, eye[1] + .4), eye[2])
