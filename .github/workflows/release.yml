@@ -37,12 +37,12 @@ jobs:
         run: poetry run pip install -e pyinstaller
 
       - name: call pyinstaller
-        run: >
-          poetry run pyinstaller
-                --add-data ".;."
-                --windowed
-                --name "Protect the Pond Quack the Case"
-                --onefile
+        run: |
+          poetry run pyinstaller `
+                --add-data ".;." `
+                --windowed `
+                --name "Protect the Pond Quack the Case" `
+                --onefile `
                 aaaaAAAA/__main__.py
 
       - name: Upload the artifacts
