@@ -74,9 +74,9 @@ class ProceduralDuckyGenerator:
 
         hls_colors = [(hue, random.uniform(.7, .8), saturation) for _ in range(4)]
 
-        # Lower the eye saturation
+        # Lower the eye light
         hls_colors[0] = (hls_colors[0][0], min(.9, hls_colors[0][1] + .4), hls_colors[0][2])
-        # Shift the saturation of the beck
+        # Shift the hue of the beck
         hls_colors[3] = (hls_colors[3][0] + .1 % 1, hls_colors[3][1], hls_colors[3][2])
 
         scalar_colors = [hls_to_rgb(*color_pair) for color_pair in hls_colors]
