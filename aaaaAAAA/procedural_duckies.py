@@ -8,7 +8,7 @@ from typing import Optional
 from PIL import Image, ImageChops
 
 ProceduralDucky = namedtuple("ProceduralDucky", "image hat equipment outfit")
-DuckyColors = namedtuple("DuckyColors", "eye wing body beak")
+DuckyColors = namedtuple("DuckyColors", "eye_main eye_wing wing body beak")
 Color = tuple[int, int, int]
 
 DUCKY_SIZE = (499, 600)
@@ -53,8 +53,8 @@ class ProceduralDuckyGenerator:
         self.apply_layer(self.templates[5], self.colors.beak)
         self.apply_layer(self.templates[4], self.colors.body)
         self.apply_layer(self.templates[3], self.colors.wing)
-        self.apply_layer(self.templates[2], self.colors.eye)
-        self.apply_layer(self.templates[1], self.colors.eye)
+        self.apply_layer(self.templates[2], self.colors.eye_wing)
+        self.apply_layer(self.templates[1], self.colors.eye_main)
 
         if random.random() < OUTFIT_CHANCE:
             outfit_type = random.choice(self.outfits)
@@ -104,11 +104,12 @@ class ProceduralDuckyGenerator:
         eye, wing, body, beak = (cls.make_color(hue, dark_variant) for i in range(4))
 
         # Lower the eye light
-        eye = (eye[0], min(.9, eye[1] + .4), eye[2])
+        eye_main = (eye[0], max(.1, eye[1] - .7), eye[2])
+        eye_wing = (eye[0], min(.9, eye[1] + .4), eye[2])
         # Shift the hue of the beck
         beak = (beak[0] + .1 % 1, beak[1], beak[2])
 
-        scalar_colors = [hls_to_rgb(*color_pair) for color_pair in (eye, wing, body, beak)]
+        scalar_colors = [hls_to_rgb(*color_pair) for color_pair in (eye_main, eye_wing, wing, body, beak)]
         colors = (tuple(int(color * 256) for color in color_pair) for color_pair in scalar_colors)
 
         return DuckyColors(*colors)
