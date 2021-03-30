@@ -110,8 +110,6 @@ class ProceduralDuckyGenerator:
         scalar_colors = [hls_to_rgb(*color_pair) for color_pair in (eye, wing, body, beak)]
         colors = (tuple(int(color * 256) for color in color_pair) for color_pair in scalar_colors)
 
-        colors = DuckyColors(*colors)
-
         return DuckyColors(*colors)
 
 
