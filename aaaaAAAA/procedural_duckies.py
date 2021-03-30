@@ -12,7 +12,7 @@ DuckyColors = namedtuple("DuckyColors", "eye wing body beak")
 Color = tuple[int, int, int]
 
 DUCKY_SIZE = (499, 600)
-ASSETS_PATH = Path("img/duck-builder")
+ASSETS_PATH = Path("assets/duck-builder")
 
 HAT_CHANCE = .7
 EQUIPMENT_CHANCE = .4
