@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 
 import arcade
 
@@ -6,107 +7,50 @@ from aaaaAAAA import _sprites, constants
 
 
 class MyGame(arcade.Window):
-    """
-    Main application class.
-
-    NOTE: Go ahead and delete the methods you don't need.
-    If you do need a method, delete the 'pass' and replace it
-    with your own code. Don't leave 'pass' in this program.
-    """
+    """The game we are making."""
 
     def __init__(self, width: int, height: int, title: str):
         super().__init__(width, height, title)
-
         self.height = height
         self.width = width
-
         self.ducky_list = arcade.SpriteList()
-
-        # List of ducks we are draggingw with the mouse
-        self.held_ducks = None
-
-        # Original location of ducks we are dragging in case they need to go back.
-        self.held_ducks_original_pos = None
-
+        self.points = 9
         arcade.set_background_color(arcade.color.WARM_BLACK)
 
     def setup(self) -> None:
         """Set up the game variables. Call to re-start the game."""
-        self.background = arcade.load_texture("assets/aaaaAAAA.png")
-        self.pond = arcade.load_texture("assets/duck_pond.png")
+        self.background = arcade.load_texture("assets/main.png")
+        self.points = [(2, 400), (88, 536), (113, 538), (192, 511), (232, 546), (320, 395),
+                       (326, 423), (370, 519), (385, 518), (472, 428), (532, 458), (555, 463),
+                       (656, 486), (765, 491), (775, 393), (616, 409), (666, 452), (707, 446)]
 
-        self.held_ducks = []
-        self.held_ducks_original_pos = []
-        for _ in range(10):
-            ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.25)
-
-            ducky.position = random.randrange(self.width), random.randrange(self.height)
-
-            self.ducky_list.append(ducky)
+        arcade.schedule(self.add_a_ducky, 3)
 
     def on_draw(self) -> None:
-        """Render the screen."""
-        # This command should happen before we start drawing. It will clear
-        # the screen to the background color, and erase what we drew last frame.
+        """When a thing is drawn."""
         arcade.start_render()
-
         arcade.draw_lrwh_rectangle_textured(
             0, 0, self.width, self.height, self.background
         )
-
-        arcade.draw_lrwh_rectangle_textured(
-            self.width//4,
-            self.height//4,
-            self.width//2,
-            self.height//2,
-            self.pond
-        )
+        self.ducky_list.update()
         self.ducky_list.draw()
 
-    def on_mouse_motion(self, x: float, y: float, delta_x: float, delta_y: float) -> None:
-        """Called whenever the mouse moves."""
-        for duck in self.held_ducks:
-            duck.center_x += delta_x
-            duck.center_y += delta_y
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        """When buttons are pressed."""
+        if symbol == 97:
+            self.add_a_ducky()
+        elif symbol == 112:
+            print(self.points)
 
-    def on_mouse_press(self, x: float, y: float, button: int, key_modifiers: int) -> None:
-        """Called when the user presses a mouse button."""
-        # Get all the ducks user has clicked on
-        ducks = arcade.get_sprites_at_point((x, y), self.ducky_list)
-
-        # Are there any clicked?
-        if not ducks:
+    def add_a_ducky(self, dt: Optional[float] = None) -> None:
+        """Adding a ducky."""
+        if not self.points:
             return
-
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Get the top one and move that
-            primary_duck = ducks[-1]
-
-            self.held_ducks = [primary_duck]
-            self.held_ducks_original_pos = [self.held_ducks[0].position]
-            self.pull_to_top(self.held_ducks[0])
-        else:
-            self.held_ducks = ducks
-            self.held_ducks_original_pos = [duck.position for duck in ducks]
-
-    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
-        """Called when a user releases a mouse button."""
-        # If we don't have any held ducks, who cares
-        if len(self.held_ducks) == 0:
-            return
-
-        # We are no longer holding cards
-        self.held_ducks = []
-
-    def pull_to_top(self, duck: arcade.Sprite) -> None:
-        """Pull duck to top of rendering order (last to render, looks on-top)."""
-        # Find the index of the duck
-        index = self.ducky_list.index(duck)
-        # Loop and pull all the other cards down towards the zero end
-        for i in range(index, len(self.ducky_list) - 1):
-            self.ducky_list[i] = self.ducky_list[i + 1]
-        # Put this card at the right-side/top/size of list
-        self.ducky_list[len(self.ducky_list) - 1] = duck
+        ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.05, points=self.points)
+        ducky.position = self.points[0]
+        self.ducky_list.append(ducky)
+        if len(self.ducky_list) >= 25:
+            arcade.unschedule(self.add_a_ducky)
 
 
 def main() -> None:
