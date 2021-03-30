@@ -7,7 +7,7 @@ from typing import Optional
 
 from PIL import Image, ImageChops
 
-ProceduralDucky = namedtuple("ProceduralDucky", "image has_hat has_equipment has_outfit")
+ProceduralDucky = namedtuple("ProceduralDucky", "image hat equipment outfit")
 DuckyColors = namedtuple("DuckyColors", "eye wing body beak")
 Color = tuple[int, int, int]
 
@@ -27,17 +27,17 @@ class ProceduralDuckyGenerator:
     templates = {
         int(filename.name[0]): Image.open(filename) for filename in (ASSETS_PATH / "silverduck templates").iterdir()
     }
-    hats = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/hats").iterdir()]
-    equipments = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/equipment").iterdir()]
-    outfits = [Image.open(filename) for filename in (ASSETS_PATH / "accessories/outfits").iterdir()]
+    hats = [(filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/hats").iterdir()]
+    equipments = [(filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/equipment").iterdir()]
+    outfits = [(filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/outfits").iterdir()]
 
     def __init__(self):
         self.output: Image.Image = Image.new("RGBA", DUCKY_SIZE, color=(0, 0, 0, 0))
         self.colors = self.make_colors()
 
-        self.has_hat = False
-        self.has_equipment = False
-        self.has_outfit = False
+        self.hat = None
+        self.equipment = None
+        self.outfit = None
 
     def generate(self) -> ProceduralDucky:
         self.apply_layer(self.templates[5], self.colors.beak)
@@ -47,18 +47,21 @@ class ProceduralDuckyGenerator:
         self.apply_layer(self.templates[1], self.colors.eye)
 
         if random.random() < HAT_CHANCE:
-            self.apply_layer(random.choice(self.hats))
-            self.has_hat = True
+            hat_type = random.choice(self.hats)
+            self.apply_layer(hat_type[1])
+            self.hat = hat_type[0]
 
         if random.random() < EQUIPMENT_CHANCE:
-            self.apply_layer(random.choice(self.equipments))
-            self.has_equipment = True
+            equipment_type = random.choice(self.equipments)
+            self.apply_layer(equipment_type[1])
+            self.equipment = [0]
 
         if random.random() < OUTFIT_CHANCE:
-            self.apply_layer(random.choice(self.outfits))
-            self.has_outfit = True
+            outfit_type = random.choice(self.outfits)
+            self.apply_layer(outfit_type[1])
+            self.outfit = outfit_type[0]
 
-        return ProceduralDucky(self.output, self.has_hat, self.has_equipment, self.has_outfit)
+        return ProceduralDucky(self.output, self.hat, self.equipment, self.outfit)
 
     def apply_layer(self, layer: Image.Image, recolor: Optional[Color] = None):
         """Add the given layer on top of the ducky. Can be recolored with the recolor argument."""
