@@ -83,7 +83,8 @@ class ProceduralDuckyGenerator:
     def make_color(hue: float, dark_variant: bool) -> tuple[float, float, float]:
         """Make a nice hls color to use in a duck."""
         saturation = 1
-        lightness = random.uniform(.5, .65)
+        lightness = random.uniform(.7, .85)
+
         # green and blue do not like high lightness, so we adjust this depending on how far from blue-green we are
         # hue_fix is the square of the distance between the hue and cyan (0.5 hue)
         hue_fix = (1 - abs(hue - 0.5))**2
