@@ -1,0 +1,50 @@
+name: Package for windows
+
+on:
+  release:
+    types: [created]
+  workflow_dispatch:
+
+jobs:
+  generate-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: setup python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: rebuild pyinstaller bootloader
+        run: |
+          git clone https://github.com/pyinstaller/pyinstaller.git
+          cd pyinstaller
+          cd bootloader
+          python waf all
+
+
+      - name: setup dependencies
+        run: |
+          pip install poetry
+          poetry install
+
+      - name: install pyinstaller from cloned repo
+        run: poetry run pip install -e pyinstaller
+
+      - name: call pyinstaller
+        run: |
+          poetry run pyinstaller `
+                --add-data ".;." `
+                --windowed `
+                --name "Protect the Pond Quack the Case" `
+                --onefile `
+                aaaaAAAA/__main__.py
+
+      - name: Upload the artifacts
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: dist/*
