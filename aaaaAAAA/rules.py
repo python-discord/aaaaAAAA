@@ -1,6 +1,6 @@
+import random
 from dataclasses import dataclass
 from enum import Enum
-from operator import attrgetter
 from typing import Iterable
 
 from PIL import Image
@@ -11,9 +11,9 @@ from aaaaAAAA.procedural_duckies import ProceduralDucky, ProceduralDuckyGenerato
 class AttireKind(Enum):
     """The possible kinds of attire a duck can wear."""
 
-    HATS = attrgetter('hats')
-    EQUIPMENTS = attrgetter('equipments')
-    OUTFITS = attrgetter('outfits')
+    HATS = ProceduralDuckyGenerator.hats
+    EQUIPMENTS = ProceduralDuckyGenerator.equipments
+    OUTFITS = ProceduralDuckyGenerator.outfits
 
 
 @dataclass()
@@ -26,8 +26,7 @@ class Attire:
     @property
     def image(self) -> Image.Image:
         """Return the image corresponding to this piece of attire."""
-        attire_list = self.kind.value(ProceduralDuckyGenerator)
-        for name, image in attire_list:
+        for name, image in self.kind.value:
             if name == self.name:
                 return image
         raise ValueError(f'no attire of kind {self.kind} with the name {self.name} exists')
@@ -46,32 +45,46 @@ class Rule:
     """
     Represents a predicate for ducks.
 
-    A rule has 3 lists, require, deny and subrules. In order for a duck to match, it needs to both:
+    A rule has 3 lists, allow and deny. In order for a duck to match, it needs to both:
     Have at least one of the the pieces of attire in require
     Have none of the pieces of attire in deny
     """
 
     def __init__(
             self,
-            require: Iterable[Attire] = (),
+            allow: Iterable[Attire] = (),
             deny: Iterable[Attire] = (),
     ):
-        self.require = list(require)
+        self.allow = list(allow)
         self.deny = list(deny)
 
     @classmethod
     def random(cls, difficulty: int):
-        """Create a random rule."""
-        pass
+        """
+        Create a random rule of the given difficulty.
+
+        Difficulty should be between 0 and 6.
+        """
+        allow = []
+        if difficulty > 3:
+            kinds = random.sample(list(Attire), difficulty - 3)
+            for kind in kinds:
+                allow.extend(attire for attire, _ in random.sample(kind.value, difficulty - 3))
+
+        deny = []
+        kinds = random.sample(list(Attire), min(difficulty, 3))
+        for kind in kinds:
+            deny.extend(attire for attire, _ in random.sample(kind.value, difficulty % 3 + 1))
+        return cls(allow, deny)
 
     def matches(self, ducky: ProceduralDucky) -> bool:
         """Check whether the ducky matches this rule."""
-        required_match = False
-        for required in self.require:
-            if required.worn_by(ducky):
-                required_match = True
+        allowed_match = False
+        for allowed in self.allow:
+            if allowed.worn_by(ducky):
+                allowed_match = True
         deny_match = True
         for denied in self.deny:
             if denied.worn_by(ducky):
                 deny_match = False
-        return required_match and deny_match
+        return allowed_match and deny_match
