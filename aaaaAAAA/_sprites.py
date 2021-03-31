@@ -28,7 +28,8 @@ class Ducky(arcade.Sprite):
         """Have the duckies swim to their final path."""
         self.finish = self.path.pop(0)
         if not self.path:
-            ducky_list.remove(self)
+            if self in ducky_list:
+                ducky_list.remove(self)
             arcade.unschedule(self.swim)
         else:
             self.progress = 0
