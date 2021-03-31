@@ -4,6 +4,8 @@ import arcade
 from arcade.gui import UIGhostFlatButton, UIManager
 from arcade.gui.ui_style import UIStyle
 
+from aaaaAAAA.game import GameView
+
 # Constants
 SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 640
@@ -68,11 +70,26 @@ class MenuButton(UIGhostFlatButton):
         self.height = self.UNHOVER_HEIGHT
 
 
+class GameButton(MenuButton):
+    """A button to start the game."""
+
+    def on_click(self) -> None:
+        """
+        This callback will be triggered if the Clickable is pressed, focused, and MOUSE_RELEASE event is triggered.
+
+        In case of multiple UIElements are overlapping, the last added to UIManager will be focused on MOUSE_RELEASE,
+        so that only that one will trigger on_click.
+
+        Starts the game by transitioning to the game view.
+        """
+        super().on_click()
+
+        game_view = GameView()
+        arcade.get_window().show_view(game_view)
+
+
 class ExitButton(MenuButton):
     """An exit button to close the game."""
-
-    def __init__(self, text: str, center_x: int = 0, center_y: int = 0):
-        super().__init__(text, center_x, center_y)
 
     def on_click(self) -> None:
         """
@@ -107,7 +124,7 @@ class MenuView(arcade.View):
         self.background = arcade.load_texture("assets/title-screen/title_screen_no_buttons.png")
         self.ui_manager.purge_ui_elements()
 
-        buttons = {"NEW GAME": MenuButton, "HIGH SCORES": MenuButton, "SETTINGS": MenuButton, "EXIT GAME": ExitButton}
+        buttons = {"NEW GAME": GameButton, "HIGH SCORES": MenuButton, "SETTINGS": MenuButton, "EXIT GAME": ExitButton}
         x_coor = self.window.width // 4.2  # Empirically chosen to be centered under the top left text.
 
         for i, (name, button) in enumerate(buttons.items()):

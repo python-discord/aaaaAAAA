@@ -5,7 +5,7 @@ import arcade
 from aaaaAAAA import _sprites, constants
 
 
-class MyGame(arcade.Window):
+class GameView(arcade.View):
     """
     Main application class.
 
@@ -14,11 +14,8 @@ class MyGame(arcade.Window):
     with your own code. Don't leave 'pass' in this program.
     """
 
-    def __init__(self, width: int, height: int, title: str):
-        super().__init__(width, height, title)
-
-        self.height = height
-        self.width = width
+    def __init__(self):
+        super().__init__()
 
         self.ducky_list = arcade.SpriteList()
 
@@ -40,7 +37,7 @@ class MyGame(arcade.Window):
         for _ in range(10):
             ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.25)
 
-            ducky.position = random.randrange(self.width), random.randrange(self.height)
+            ducky.position = random.randrange(self.window.width), random.randrange(self.window.height)
 
             self.ducky_list.append(ducky)
 
@@ -51,14 +48,14 @@ class MyGame(arcade.Window):
         arcade.start_render()
 
         arcade.draw_lrwh_rectangle_textured(
-            0, 0, self.width, self.height, self.background
+            0, 0, self.window.width, self.window.height, self.background
         )
 
         arcade.draw_lrwh_rectangle_textured(
-            self.width//4,
-            self.height//4,
-            self.width//2,
-            self.height//2,
+            self.window.width//4,
+            self.window.height//4,
+            self.window.width//2,
+            self.window.height//2,
             self.pond
         )
         self.ducky_list.draw()
@@ -97,6 +94,10 @@ class MyGame(arcade.Window):
 
         # We are no longer holding cards
         self.held_ducks = []
+
+    def on_show_view(self) -> None:
+        """Called when this view is shown."""
+        self.setup()
 
     def pull_to_top(self, duck: arcade.Sprite) -> None:
         """Pull duck to top of rendering order (last to render, looks on-top)."""
