@@ -9,13 +9,12 @@ SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 640
 SCREEN_TITLE = "aaaaAAAA"
 
-hover_sound = arcade.load_sound("assets/audio/fx/plop_1.ogg")
-background_music = None
-
 
 # Classes
 class MenuUIManager(UIManager):
     """A custom UI manager to play a hover sound when an element is hovered."""
+
+    hover_sound = arcade.load_sound("assets/audio/fx/plop_1.ogg")
 
     def __init__(self, window: Optional[arcade.Window] = None, attach_callbacks: bool = True, **kwargs):
         super().__init__(window, attach_callbacks, **kwargs)
@@ -27,7 +26,7 @@ class MenuUIManager(UIManager):
 
         if self.hovered_element and not self.already_hovered:
             self.already_hovered = True
-            arcade.play_sound(hover_sound)
+            arcade.play_sound(self.hover_sound)
         elif self.already_hovered and not self.hovered_element:
             self.already_hovered = False
 
@@ -91,6 +90,8 @@ class ExitButton(MenuButton):
 class MenuView(arcade.View):
     """Main menu view."""
 
+    background_music = arcade.load_sound("assets/title-screen/PLACEHOLDER_Dubrovnik_lemonsaurus_title_screen_music.mp3")
+
     def __init__(self):
         """Initialize the view."""
         super().__init__()
@@ -98,6 +99,8 @@ class MenuView(arcade.View):
         arcade.set_background_color(arcade.color.WHITE)
         self.background: arcade.Texture = None
         self.ui_manager = MenuUIManager()
+
+        self.background_player = None
 
     def setup(self) -> None:
         """Sets the background and the buttons."""
@@ -111,6 +114,8 @@ class MenuView(arcade.View):
             self.ui_manager.add_ui_element(
                 button(name, center_x=x_coor, center_y=self.window.height * 2 // 3 - i * 75)
             )
+
+        self.background_player = arcade.play_sound(self.background_music)
 
     def on_draw(self) -> None:
         """
@@ -133,6 +138,7 @@ class MenuView(arcade.View):
     def on_hide_view(self) -> None:
         """Called when this view is not shown anymore."""
         self.ui_manager.unregister_handlers()
+        arcade.stop_sound(self.background_player)
 
 
 def main() -> None:
