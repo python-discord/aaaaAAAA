@@ -1,11 +1,14 @@
 import random
 from dataclasses import dataclass
 from enum import Enum
+from functools import cache
 from typing import Iterable
 
+import arcade
 from PIL import Image
 
-from aaaaAAAA.procedural_duckies import ProceduralDucky, ProceduralDuckyGenerator
+from aaaaAAAA.constants import SCREEN_HEIGHT, SCREEN_WIDTH
+from aaaaAAAA.procedural_duckies import ProceduralDucky, ProceduralDuckyGenerator, make_ducky
 
 
 class AttireKind(Enum):
@@ -16,7 +19,7 @@ class AttireKind(Enum):
     OUTFITS = ProceduralDuckyGenerator.outfits
 
 
-@dataclass()
+@dataclass(frozen=True)
 class Attire:
     """A piece of attire a duck is wearing."""
 
@@ -59,23 +62,24 @@ class Rule:
         self.deny = list(deny)
 
     @classmethod
-    def random(cls, difficulty: int):
+    def rand_attires(cls, n: int) -> list[Attire]:
+        """Create n random attires."""
+        return random.sample([
+            Attire(kind, name)
+            for kind in AttireKind
+            for name, image in kind.value
+        ], n)
+
+    @classmethod
+    def random(cls, difficulty: int) -> "Rule":
         """
         Create a random rule of the given difficulty.
 
         Difficulty should be between 0 and 6.
         """
-        allow = []
-        if difficulty > 3:
-            kinds = random.sample(list(Attire), difficulty - 3)
-            for kind in kinds:
-                allow.extend(attire for attire, _ in random.sample(kind.value, difficulty - 3))
-
-        deny = []
-        kinds = random.sample(list(Attire), min(difficulty, 3))
-        for kind in kinds:
-            deny.extend(attire for attire, _ in random.sample(kind.value, difficulty % 3 + 1))
-        return cls(allow, deny)
+        allow = set(cls.rand_attires(max(difficulty * 2 - 4, 0)))
+        deny = set(cls.rand_attires((difficulty * 2 + 2) % 8))
+        return cls(allow - deny, deny)
 
     def matches(self, ducky: ProceduralDucky) -> bool:
         """Check whether the ducky matches this rule."""
@@ -88,3 +92,109 @@ class Rule:
             if denied.worn_by(ducky):
                 deny_match = False
         return allowed_match and deny_match
+
+
+class RuleView(arcade.View):
+    """
+    A view for testing out the rules.
+
+    Once we have game, just take some methods from this and delete it.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.difficulty = 0
+        self.score = 0
+        self.answer = None
+        self.rule = Rule.random(self.difficulty)
+        self.current_duck = make_ducky()
+        self.duck_texture = arcade.Texture('duck', self.current_duck.image)
+
+    def setup(self) -> None:
+        """This should set up your game and get it ready to play."""
+        self.difficulty = 0
+        self.score = 0
+        self.current_duck = make_ducky()
+        self.duck_texture = arcade.Texture('duck', self.current_duck.image)
+
+    def on_show(self) -> None:
+        """Called when switching to this view."""
+        arcade.set_background_color(arcade.color.LIGHT_BLUE)
+
+    def on_draw(self) -> None:
+        """Draw everything for the game."""
+        arcade.start_render()
+        duck_dim = SCREEN_WIDTH * 2 / 3, SCREEN_HEIGHT - 210, 200, 200
+        arcade.draw_xywh_rectangle_filled(*duck_dim, arcade.color.LIGHT_BLUE)
+        arcade.draw_lrwh_rectangle_textured(*duck_dim, self.duck_texture)
+        arcade.draw_text(
+            f"Difficulty: {self.difficulty} Score: {self.score}",
+            10, 10,
+            arcade.color.ALIZARIN_CRIMSON
+        )
+        self.draw_rule(0, SCREEN_HEIGHT - 400)
+
+    def on_update(self, delta_time: float) -> None:
+        """Check for answers."""
+        if self.answer is not None:
+            if self.answer == self.rule.matches(self.current_duck):
+                self.score += 1
+            else:
+                self.score -= 1
+            self.answer = None
+            self.current_duck = make_ducky()
+            self.duck_texture = arcade.Texture(str(random.randrange(10**10)), self.current_duck.image)
+            arcade.cleanup_texture_cache()
+            self.rule = Rule.random(self.difficulty)
+
+    def on_key_press(self, key: int, _modifiers: int) -> None:
+        """
+        Handle key presses.
+
+        A - allow this duck
+        D - deny this duck
+        W - increase difficulty
+        S - decrease difficulty
+        """
+        if key == arcade.key.A:
+            self.answer = True
+        if key == arcade.key.D:
+            self.answer = False
+
+        if key == arcade.key.W:
+            self.difficulty = min(6, max(0, self.difficulty + 1))
+        if key == arcade.key.S:
+            self.difficulty = min(6, max(0, self.difficulty - 1))
+
+    @cache
+    def attire_texture(self, attire: Attire) -> arcade.Texture:
+        """Get a texture for a piece of attire."""
+        return arcade.Texture(attire.name, attire.image)
+
+    def draw_attire(self, x: float, y: float, attire: Attire, width: float = 30) -> None:
+        """Draw a piece of attire."""
+        texture = self.attire_texture(attire)
+        scale = width / texture.width
+        texture.draw_scaled(x, y, scale)
+
+    def draw_attire_row(self, x: float, y: float, attires: Iterable[Attire]) -> None:
+        """Draw a row of attires."""
+        width = 100
+        for i, attire in enumerate(attires):
+            self.draw_attire(x + width * i, y, attire, width)
+
+    def draw_rule(self, x: float, y: float) -> None:
+        """Draw the current rule."""
+        if self.rule.allow:
+            arcade.draw_text("+", x, y, arcade.color.GREEN, font_size=30)
+            self.draw_attire_row(x + 80, y, self.rule.allow)
+        if self.rule.deny:
+            arcade.draw_text("-", x, y + 200, arcade.color.ALABAMA_CRIMSON, font_size=30)
+            self.draw_attire_row(x + 80, y + 200, self.rule.deny)
+
+
+if __name__ == '__main__':
+    window = arcade.Window(title='rule test', width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
+    rule = RuleView()
+    window.show_view(rule)
+    arcade.run()
