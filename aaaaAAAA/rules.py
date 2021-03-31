@@ -32,6 +32,15 @@ class Attire:
                 return image
         raise ValueError(f'no attire of kind {self.kind} with the name {self.name} exists')
 
+    def worn_by(self, ducky: ProceduralDucky) -> bool:
+        """Return whether a ducky is wearing this piece of attire."""
+        if self.kind is AttireKind.HATS:
+            return self.name == ducky.hat
+        if self.kind is AttireKind.EQUIPMENTS:
+            return self.name == ducky.equipment
+        if self.kind is AttireKind.OUTFITS:
+            return self.name == ducky.outfit
+
 
 class Rule:
     """
@@ -57,3 +66,12 @@ class Rule:
 
     def matches(self, ducky: ProceduralDucky) -> bool:
         """Check whether the ducky matches this rule."""
+        required_match = False
+        for required in self.require:
+            if required.worn_by(ducky):
+                required_match = True
+        deny_match = True
+        for denied in self.deny:
+            if denied.worn_by(ducky):
+                deny_match = False
+        return required_match and deny_match
