@@ -4,12 +4,8 @@ import arcade
 from arcade.gui import UIGhostFlatButton, UIManager
 from arcade.gui.ui_style import UIStyle
 
+from aaaaAAAA import constants
 from aaaaAAAA.game import GameView
-
-# Constants
-SCREEN_WIDTH = 960
-SCREEN_HEIGHT = 640
-SCREEN_TITLE = "aaaaAAAA"
 
 
 # Classes
@@ -160,7 +156,7 @@ class MenuView(arcade.View):
 
 def main() -> None:
     """Main method."""
-    window = arcade.Window(title=SCREEN_TITLE, width=SCREEN_WIDTH, height=SCREEN_HEIGHT)
+    window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     menu = MenuView()
     window.show_view(menu)
     arcade.run()
