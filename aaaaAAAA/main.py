@@ -151,7 +151,8 @@ class MenuView(arcade.View):
     def on_hide_view(self) -> None:
         """Called when this view is not shown anymore."""
         self.ui_manager.unregister_handlers()
-        arcade.stop_sound(self.background_player)
+        if self.background_player and self.background_player.playing:
+            arcade.stop_sound(self.background_player)
 
 
 def main() -> None:
