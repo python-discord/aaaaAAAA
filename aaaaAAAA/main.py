@@ -5,6 +5,9 @@ import arcade
 
 from aaaaAAAA import _sprites, constants
 
+SPAWN_RATE = 3
+DUCKS = 25
+
 
 class MyGame(arcade.Window):
     """The game we are making."""
@@ -24,7 +27,7 @@ class MyGame(arcade.Window):
                        (351, 476), (374, 523), (389, 511), (418, 486), (444, 459), (473, 430), (521, 440), (538, 472),
                        (583, 472), (660, 487), (618, 438), (658, 437), (700, 398), (745, 482), (678, 453), (770, 395)]
 
-        arcade.schedule(self.add_a_ducky, 3)
+        arcade.schedule(self.add_a_ducky, SPAWN_RATE)
 
     def on_draw(self) -> None:
         """When a thing is drawn."""
@@ -49,7 +52,7 @@ class MyGame(arcade.Window):
         ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.05, points=self.points)
         ducky.position = self.points[0]
         self.ducky_list.append(ducky)
-        if len(self.ducky_list) >= 25:
+        if len(self.ducky_list) >= DUCKS:
             arcade.unschedule(self.add_a_ducky)
 
 

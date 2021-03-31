@@ -1,5 +1,3 @@
-from random import random
-
 import arcade
 
 DUCKY_SPEED = 240
