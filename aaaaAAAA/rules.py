@@ -79,7 +79,7 @@ class Rule:
 
     def matches(self, ducky: ProceduralDucky) -> bool:
         """Check whether the ducky matches this rule."""
-        allowed_match = False
+        allowed_match = not self.allow
         for allowed in self.allow:
             if allowed.worn_by(ducky):
                 allowed_match = True
