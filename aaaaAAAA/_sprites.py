@@ -1,7 +1,7 @@
 import arcade
 
 DUCKY_SPEED = 240
-ducky_list = []
+ducky_list = []  # Currently doesn't get populated
 
 
 class Ducky(arcade.Sprite):
@@ -27,7 +27,8 @@ class Ducky(arcade.Sprite):
         """Have the duckies swim to their final path."""
         self.finish = self.path.pop(0)
         if not self.path:
-            # ducky_list.remove(self) # would currently ValueError
+            if self in ducky_list:
+                ducky_list.remove(self)
             arcade.unschedule(self.swim)
         else:
             self.progress = 0
