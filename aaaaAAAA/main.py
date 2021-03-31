@@ -14,15 +14,15 @@ class MyGame(arcade.Window):
         self.height = height
         self.width = width
         self.ducky_list = arcade.SpriteList()
-        self.points = 9
         arcade.set_background_color(arcade.color.WARM_BLACK)
 
     def setup(self) -> None:
         """Set up the game variables. Call to re-start the game."""
         self.background = arcade.load_texture("assets/main.png")
-        self.points = [(2, 400), (88, 536), (113, 538), (192, 511), (232, 546), (320, 395),
-                       (326, 423), (370, 519), (385, 518), (472, 428), (532, 458), (555, 463),
-                       (656, 486), (765, 491), (775, 393), (616, 409), (666, 452), (707, 446)]
+        self.points = [(0, 401), (21, 434), (42, 469), (63, 505), (94, 541), (140, 531), (185, 512), (212, 522),
+                       (230, 549), (248, 533), (259, 498), (278, 449), (304, 414), (318, 397), (330, 429), (320, 414),
+                       (351, 476), (374, 523), (389, 511), (418, 486), (444, 459), (473, 430), (521, 440), (538, 472),
+                       (583, 472), (660, 487), (618, 438), (658, 437), (700, 398), (745, 482), (678, 453), (770, 395)]
 
         arcade.schedule(self.add_a_ducky, 3)
 
