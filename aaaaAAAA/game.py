@@ -107,16 +107,3 @@ class MyGame(arcade.Window):
             self.ducky_list[i] = self.ducky_list[i + 1]
         # Put this card at the right-side/top/size of list
         self.ducky_list[len(self.ducky_list) - 1] = duck
-
-
-def main() -> None:
-    """Main method."""
-    game = MyGame(
-        constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, constants.SCREEN_TITLE
-    )
-    game.setup()
-    arcade.run()
-
-
-if __name__ == "__main__":
-    main()

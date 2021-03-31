@@ -1,8 +1,8 @@
 import os
 import sys
 
-from aaaaAAAA import game
+from aaaaAAAA import main
 if getattr(sys, 'frozen', False):
     os.chdir(sys._MEIPASS)
 
-game.main()
+main.main()
