@@ -10,7 +10,7 @@ class Ducky(arcade.Sprite):
     """Ducky sprite."""
 
     def __init__(
-        self, ducky_name: str, scale: float = 1, points: list = None, *args, **kwargs
+        self, ducky_name: str, scale: float = 1, points: list[tuple[int, int]] = None, *args, **kwargs
     ):
         self.image_file_name = f"assets/{ducky_name}.png"
         self.path = points[:]
@@ -18,7 +18,8 @@ class Ducky(arcade.Sprite):
         super().__init__(
             self.image_file_name, scale, hit_box_algorithm="None", *args, **kwargs
         )
-        arcade.schedule(self.swim, max(3, random() * 4))
+        # uniform swimming - conveyor belt/queue like
+        arcade.schedule(self.swim, 1)
 
     def update(self) -> None:
         """Update the position of the ducky."""
@@ -28,8 +29,7 @@ class Ducky(arcade.Sprite):
         """Have the duckies swim to their final path."""
         self.finish = self.path.pop(0)
         if not self.path:
-            if self in ducky_list:
-                ducky_list.remove(self)
+            # ducky_list.remove(self) # would currently ValueError
             arcade.unschedule(self.swim)
         else:
             self.progress = 0
@@ -45,6 +45,6 @@ class Ducky(arcade.Sprite):
         self.end = start_x + ((end_x - start_x) * dt), start_y + (
             (end_y - start_y) * dt
         )
-        self.progress += 0.05
+        self.progress += 1/DUCKY_SPEED
         if self.progress == 1:
             arcade.unschedule(self.pp)
