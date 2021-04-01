@@ -91,12 +91,12 @@ class GameView(arcade.View):
         """
         if not self.debug:
             return
-        if symbol == 97:
+        if symbol == ord('a'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
                 self.curtains.current_scene.add_a_ducky()
-        elif symbol == 112:
+        elif symbol == ord('p'):
             print(POINTS_HINT)
-        elif symbol == 120:
+        elif symbol == ord('x'):
             POINTS_HINT.clear()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
