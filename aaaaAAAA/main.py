@@ -1,120 +1,165 @@
-import random
+from typing import Optional
 
 import arcade
+from arcade.gui import UIGhostFlatButton, UIManager
+from arcade.gui.ui_style import UIStyle
 
-from aaaaAAAA import _sprites, constants
+from aaaaAAAA import constants
+from aaaaAAAA.game import GameView
 
 
-class MyGame(arcade.Window):
-    """
-    Main application class.
+# Classes
+class MenuUIManager(UIManager):
+    """A custom UI manager to play a hover sound when an element is hovered."""
 
-    NOTE: Go ahead and delete the methods you don't need.
-    If you do need a method, delete the 'pass' and replace it
-    with your own code. Don't leave 'pass' in this program.
-    """
+    hover_sound = arcade.load_sound("assets/audio/fx/plop_1.ogg")
 
-    def __init__(self, width: int, height: int, title: str):
-        super().__init__(width, height, title)
+    def __init__(self, window: Optional[arcade.Window] = None, attach_callbacks: bool = True, **kwargs):
+        super().__init__(window, attach_callbacks, **kwargs)
+        self.already_hovered = False
 
-        self.height = height
-        self.width = width
+    def on_mouse_motion(self, x: float, y: float, dx: float, dy: float) -> None:
+        """Play a hover sound is an element is newly hovered."""
+        super().on_mouse_motion(x, y, dx, dy)
 
-        self.ducky_list = arcade.SpriteList()
+        if self.hovered_element and not self.already_hovered:
+            self.already_hovered = True
+            arcade.play_sound(self.hover_sound)
+        elif self.already_hovered and not self.hovered_element:
+            self.already_hovered = False
 
-        # List of ducks we are draggingw with the mouse
-        self.held_ducks = None
 
-        # Original location of ducks we are dragging in case they need to go back.
-        self.held_ducks_original_pos = None
+class MenuButton(UIGhostFlatButton):
+    """Generic menu button. Applies the desired style and enlargement on hovering."""
 
-        arcade.set_background_color(arcade.color.WARM_BLACK)
+    UNHOVER_WIDTH = 300
+    UNHOVER_HEIGHT = 60
+    HOVER_WIDTH = 310
+    HOVER_HEIGHT = 65
+
+    def __init__(self, text: str, center_x: int = 0, center_y: int = 0):
+        super().__init__(
+            text,
+            center_x,
+            center_y,
+            width=self.UNHOVER_WIDTH,
+            height=self.UNHOVER_HEIGHT,
+            style=UIStyle(border_width=0)
+        )
+
+        self.set_style_attrs(
+            font_color=arcade.color.WHITE,
+            font_color_hover=arcade.color.WHITE,
+            font_color_press=arcade.color.WHITE,
+            font_name="assets/title-screen/LuckiestGuy-Regular.ttf",
+            font_size=35
+        )
+
+    def on_hover(self) -> None:
+        """Triggered when the mouse is over the sprite."""
+        self.width = self.HOVER_WIDTH
+        self.height = self.HOVER_HEIGHT
+
+    def on_unhover(self) -> None:
+        """Triggered when the mouse leaves the sprite."""
+        self.width = self.UNHOVER_WIDTH
+        self.height = self.UNHOVER_HEIGHT
+
+
+class GameButton(MenuButton):
+    """A button to start the game."""
+
+    def on_click(self) -> None:
+        """
+        This callback will be triggered if the Clickable is pressed, focused, and MOUSE_RELEASE event is triggered.
+
+        In case of multiple UIElements are overlapping, the last added to UIManager will be focused on MOUSE_RELEASE,
+        so that only that one will trigger on_click.
+
+        Starts the game by transitioning to the game view.
+        """
+        super().on_click()
+
+        game_view = GameView()
+        arcade.get_window().show_view(game_view)
+
+
+class ExitButton(MenuButton):
+    """An exit button to close the game."""
+
+    def on_click(self) -> None:
+        """
+        This callback will be triggered if the Clickable is pressed, focused, and MOUSE_RELEASE event is triggered.
+
+        In case of multiple UIElements are overlapping, the last added to UIManager will be focused on MOUSE_RELEASE,
+        so that only that one will trigger on_click.
+
+        Closes the game window.
+        """
+        super().on_click()
+        arcade.close_window()
+
+
+class MenuView(arcade.View):
+    """Main menu view."""
+
+    background_music = arcade.load_sound("assets/title-screen/PLACEHOLDER_Dubrovnik_lemonsaurus_title_screen_music.mp3")
+
+    def __init__(self):
+        """Initialize the view."""
+        super().__init__()
+
+        arcade.set_background_color(arcade.color.WHITE)
+        self.background: arcade.Texture = None
+        self.ui_manager = MenuUIManager()
+
+        self.background_player = None
 
     def setup(self) -> None:
-        """Set up the game variables. Call to re-start the game."""
-        self.background = arcade.load_texture("assets/aaaaAAAA.png")
-        self.pond = arcade.load_texture("assets/duck_pond.png")
+        """Sets the background and the buttons."""
+        self.background = arcade.load_texture("assets/title-screen/title_screen_no_buttons.png")
+        self.ui_manager.purge_ui_elements()
 
-        self.held_ducks = []
-        self.held_ducks_original_pos = []
-        for _ in range(10):
-            ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.25)
+        buttons = {"NEW GAME": GameButton, "HIGH SCORES": MenuButton, "SETTINGS": MenuButton, "EXIT GAME": ExitButton}
+        x_coor = self.window.width // 4.2  # Empirically chosen to be centered under the top left text.
 
-            ducky.position = random.randrange(self.width), random.randrange(self.height)
+        for i, (name, button) in enumerate(buttons.items()):
+            self.ui_manager.add_ui_element(
+                button(name, center_x=x_coor, center_y=self.window.height * 2 // 3 - i * 75)
+            )
 
-            self.ducky_list.append(ducky)
+        self.background_player = arcade.play_sound(self.background_music)
 
     def on_draw(self) -> None:
-        """Render the screen."""
-        # This command should happen before we start drawing. It will clear
-        # the screen to the background color, and erase what we drew last frame.
+        """
+        Called when this view should draw.
+
+        Draws in the background image.
+        """
         arcade.start_render()
-
-        arcade.draw_lrwh_rectangle_textured(
-            0, 0, self.width, self.height, self.background
+        self.background.draw_sized(
+            self.window.width // 2,
+            self.window.height // 2,
+            self.window.width,
+            self.window.height
         )
 
-        arcade.draw_lrwh_rectangle_textured(
-            self.width//4,
-            self.height//4,
-            self.width//2,
-            self.height//2,
-            self.pond
-        )
-        self.ducky_list.draw()
+    def on_show_view(self) -> None:
+        """Called when this view is shown."""
+        self.setup()
 
-    def on_mouse_motion(self, x: float, y: float, delta_x: float, delta_y: float) -> None:
-        """Called whenever the mouse moves."""
-        for duck in self.held_ducks:
-            duck.center_x += delta_x
-            duck.center_y += delta_y
-
-    def on_mouse_press(self, x: float, y: float, button: int, key_modifiers: int) -> None:
-        """Called when the user presses a mouse button."""
-        # Get all the ducks user has clicked on
-        ducks = arcade.get_sprites_at_point((x, y), self.ducky_list)
-
-        # Are there any clicked?
-        if not ducks:
-            return
-
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Get the top one and move that
-            primary_duck = ducks[-1]
-
-            self.held_ducks = [primary_duck]
-            self.held_ducks_original_pos = [self.held_ducks[0].position]
-            self.pull_to_top(self.held_ducks[0])
-        else:
-            self.held_ducks = ducks
-            self.held_ducks_original_pos = [duck.position for duck in ducks]
-
-    def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
-        """Called when a user releases a mouse button."""
-        # If we don't have any held ducks, who cares
-        if len(self.held_ducks) == 0:
-            return
-
-        # We are no longer holding cards
-        self.held_ducks = []
-
-    def pull_to_top(self, duck: arcade.Sprite) -> None:
-        """Pull duck to top of rendering order (last to render, looks on-top)."""
-        # Find the index of the duck
-        index = self.ducky_list.index(duck)
-        # Loop and pull all the other cards down towards the zero end
-        for i in range(index, len(self.ducky_list) - 1):
-            self.ducky_list[i] = self.ducky_list[i + 1]
-        # Put this card at the right-side/top/size of list
-        self.ducky_list[len(self.ducky_list) - 1] = duck
+    def on_hide_view(self) -> None:
+        """Called when this view is not shown anymore."""
+        self.ui_manager.unregister_handlers()
+        if self.background_player and self.background_player.playing:
+            arcade.stop_sound(self.background_player)
 
 
 def main() -> None:
     """Main method."""
-    game = MyGame(
-        constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, constants.SCREEN_TITLE
-    )
-    game.setup()
+    window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
+    menu = MenuView()
+    window.show_view(menu)
     arcade.run()
 
 
