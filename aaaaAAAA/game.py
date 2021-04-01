@@ -7,12 +7,10 @@ import arcade
 from arcade_curtains import BaseScene, KeyFrame, Sequence, Curtains
 
 
-POINTS_HINT = [(0.0025, 0.665), (0.0575, 0.7883), (0.08375, 0.8467), (0.11875, 0.905),
-               (0.18, 0.8767), (0.245, 0.845), (0.2725, 0.89), (0.29125, 0.9133),
-               (0.29125, 0.9133), (0.33, 0.815), (0.33, 0.815), (0.3825, 0.69167),
-               (0.4, 0.67167), (0.4175, 0.73167), (0.4175, 0.73167),
-               (0.47, 0.87167), (0.5225, 0.8133), (0.5225, 0.8133),
-               (0.59, 0.71167), (0.59, 0.71167), (0.60625, 0.72167)]
+POINTS_HINT = [(0.004, 0.681), (0.042, 0.77), (0.084, 0.827), (0.118, 0.878),
+               (0.189, 0.858), (0.245, 0.841), (0.296, 0.887), (0.37, 0.717),
+               (0.397, 0.673), (0.401, 0.709), (0.425, 0.72), (0.455, 0.85),
+               (0.481, 0.852), (0.583, 0.72), (0.597, 0.728), (0.61, 0.714)]
 
 
 DUCKS = 36
@@ -24,7 +22,9 @@ class DuckScene(BaseScene):
         super().__init__()
 
     def setup(self):
-        self.background = arcade.load_texture("assets/main.png")
+        self.background = arcade.load_texture("assets/overworld/overworld placeholder.png")
+        self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue pond.png")
+        self.pondhouse = arcade.load_texture("assets/overworld/pondhouse.png")
         self.ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.075)
         self.ducks.append(self.leader)
@@ -54,6 +54,13 @@ class DuckScene(BaseScene):
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
+        arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH/2,
+                                             constants.SCREEN_HEIGHT * .8,
+                                             self.pond,
+                                             constants.SCREEN_WIDTH/self.pond.image.width)
+        arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH * .67,
+                                             constants.SCREEN_HEIGHT * .78,
+                                             self.pondhouse)
         self.ducks.draw()
 
     @staticmethod
@@ -101,11 +108,11 @@ class GameView(arcade.View):
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height"""
-        POINTS_HINT.append((x/self.window.width, y/self.window.height))
+        POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
 
 def main():
-    window = arcade.Window()
+    window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
     game = GameView(debug=True)
     window.show_view(game)
