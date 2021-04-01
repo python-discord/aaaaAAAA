@@ -17,7 +17,7 @@ class DuckScene(BaseScene):
     def setup(self) -> None:
         """Setup the scene assets."""
         self.background = arcade.load_texture("assets/overworld/overworld placeholder.png")
-        self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue pond.png")
+        self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue Pond.png")
         self.pondhouse = arcade.load_texture("assets/overworld/pondhouse.png")
         self.ducks = arcade.SpriteList()
         self.pondhouse_ducks = []
