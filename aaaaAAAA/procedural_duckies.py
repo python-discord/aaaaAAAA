@@ -24,16 +24,16 @@ def make_ducky() -> ProceduralDucky:
     return ProceduralDuckyGenerator().generate()
 
 
+def _load_image_assets(file_path: str) -> list[tuple[str, Image]]:
+    return [
+        (filename.stem, Image.open(filename))
+        for filename in (ASSETS_PATH / file_path).iterdir()
+        if not filename.is_dir()
+    ]
+
+
 class ProceduralDuckyGenerator:
     """Temporary class used to generate a ducky."""
-
-    @staticmethod
-    def _load_image_assets(file_path: str) -> list[tuple[str, Image]]:
-        return [
-            (filename.stem, Image.open(filename))
-            for filename in (ASSETS_PATH / file_path).iterdir()
-            if not filename.is_dir()
-        ]
 
     templates = {
         int(filename.name[0]): Image.open(filename) for filename in (ASSETS_PATH / "silverduck templates").iterdir()
