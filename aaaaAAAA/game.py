@@ -46,7 +46,7 @@ class DuckScene(BaseScene):
     def enter_scene(self, previous_scene) -> None:
         if not self.debug:
             self.animations.fire(self.leader, self.seq)
-            arcade.schedule(self.add_a_ducky, 3)
+            arcade.schedule(self.add_a_ducky, len(POINTS_HINT)*10/DUCKS)
 
     def draw(self):
         """When a duck is drawn."""
@@ -73,7 +73,7 @@ class DuckScene(BaseScene):
 
 
 class GameView(arcade.View):
-    def __init__(self, debug=False):
+    def __init__(self, debug: Optional[bool] = False):
         super().__init__()
         self.debug = debug
         if self.debug:
@@ -91,12 +91,12 @@ class GameView(arcade.View):
         """
         if not self.debug:
             return
-        if symbol == 97:
+        if symbol == ord('a'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
                 self.curtains.current_scene.add_a_ducky()
-        elif symbol == 112:
+        elif symbol == ord('p'):
             print(POINTS_HINT)
-        elif symbol == 120:
+        elif symbol == ord('x'):
             POINTS_HINT.clear()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
