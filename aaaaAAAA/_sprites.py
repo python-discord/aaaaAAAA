@@ -1,3 +1,4 @@
+from math import degrees, sin
 from random import randint, shuffle
 from typing import Optional
 
@@ -14,7 +15,9 @@ class Ducky(arcade.Sprite):
 
     def __init__(self, ducky_name: str, scale: float = 1, *args, **kwargs):
         self.image_file_name = f"assets/{ducky_name}.png"
-        super().__init__(self.image_file_name, scale, hit_box_algorithm="None", *args, **kwargs)
+        super().__init__(self.image_file_name, scale,
+                         hit_box_algorithm="None", flipped_horizontally=True,
+                         *args, **kwargs)
         self.path_seq = self.sequence_gen(random=True)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
@@ -50,9 +53,11 @@ class Ducky(arcade.Sprite):
         for ((x1, y1), (x2, y2)) in zip(points[:-1], points[1:]):
             p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
             p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
+            angle = degrees(sin((p2[0]-p1[0])/max((p2[1]-p1[1]), 1)))
             frames = 1
             if random:
                 frames = randint(1, 5)
-            seq.add_keyframes((current, KeyFrame(position=p1)), (current+frames, KeyFrame(position=p2)))
+            seq.add_keyframes((current, KeyFrame(position=p1, angle=angle)),
+                              (current+frames, KeyFrame(position=p2)))
             current += frames
         return seq
