@@ -52,6 +52,12 @@ class ProceduralDuckyGenerator:
         """Actually generate the ducky."""
         self.apply_layer(self.templates[5], self.colors.beak)
         self.apply_layer(self.templates[4], self.colors.body)
+
+        if random.random() < EQUIPMENT_CHANCE:
+            equipment_type = random.choice(self.equipments)
+            self.apply_layer(equipment_type[1])
+            self.equipment = equipment_type[0]
+
         self.apply_layer(self.templates[3], self.colors.wing)
         self.apply_layer(self.templates[2], self.colors.eye_wing)
         self.apply_layer(self.templates[1], self.colors.eye_main)
@@ -65,11 +71,6 @@ class ProceduralDuckyGenerator:
             hat_type = random.choice(self.hats)
             self.apply_layer(hat_type[1])
             self.hat = hat_type[0]
-
-        if random.random() < EQUIPMENT_CHANCE:
-            equipment_type = random.choice(self.equipments)
-            self.apply_layer(equipment_type[1])
-            self.equipment = equipment_type[0]
 
         return ProceduralDucky(self.output, self.hat, self.equipment, self.outfit)
 

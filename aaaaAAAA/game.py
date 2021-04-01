@@ -1,110 +1,136 @@
-import random
+from random import choice, randint
+from typing import Optional
 
 import arcade
+from arcade_curtains import BaseScene, Curtains, KeyFrame, Sequence
 
 from aaaaAAAA import _sprites, constants
 
 
-class GameView(arcade.View):
-    """
-    Main application class.
+POINTS_HINT = [(0.004, 0.681), (0.042, 0.77), (0.084, 0.827), (0.118, 0.878),
+               (0.189, 0.858), (0.245, 0.841), (0.296, 0.887), (0.37, 0.717),
+               (0.397, 0.673), (0.401, 0.709), (0.425, 0.72), (0.455, 0.85),
+               (0.481, 0.852), (0.583, 0.72), (0.597, 0.728), (0.61, 0.714)]
 
-    NOTE: Go ahead and delete the methods you don't need.
-    If you do need a method, delete the 'pass' and replace it
-    with your own code. Don't leave 'pass' in this program.
-    """
 
-    def __init__(self):
+DUCKS = 36
+
+
+class DuckScene(BaseScene):
+    """Scene showing Ducks moving down the river to the pondhouse."""
+
+    def __init__(self, debug: Optional[bool] = False):
+        self.debug = debug
         super().__init__()
 
-        self.ducky_list = arcade.SpriteList()
+    def setup(self) -> None:
+        """Setup the scene assets."""
+        self.background = arcade.load_texture("assets/overworld/overworld placeholder.png")
+        self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue pond.png")
+        self.pondhouse = arcade.load_texture("assets/overworld/pondhouse.png")
+        self.ducks = arcade.SpriteList()
+        self.leader = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.075)
+        self.ducks.append(self.leader)
+        self.seq = self.sequence_gen()
 
-        # List of ducks we are draggingw with the mouse
-        self.held_ducks = None
+    def add_a_ducky(self, dt: Optional[float] = None) -> None:
+        """Add a ducky to the scene, register some events and start animating."""
+        if not POINTS_HINT:
+            return
+        ducky = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.05)
+        self.events.hover(ducky, ducky.expand)
+        self.events.out(ducky, ducky.shrink)
+        self.ducks.append(ducky)
+        seq = self.sequence_gen(random=True)
+        self.animations.fire(ducky, seq)
+        if len(self.ducks) >= DUCKS:
+            arcade.unschedule(self.add_a_ducky)
 
-        # Original location of ducks we are dragging in case they need to go back.
-        self.held_ducks_original_pos = None
+    def enter_scene(self, previous_scene: BaseScene) -> None:
+        """Start adding duckies on entering the scene."""
+        if not self.debug:
+            self.animations.fire(self.leader, self.seq)
+            arcade.schedule(self.add_a_ducky, len(POINTS_HINT)*10/DUCKS)
 
+    def draw(self) -> None:
+        """Draw the background environment."""
+        arcade.start_render()
+        arcade.draw_lrwh_rectangle_textured(
+            0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
+        )
+        arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH/2,
+                                             constants.SCREEN_HEIGHT * .8,
+                                             self.pond,
+                                             constants.SCREEN_WIDTH/self.pond.image.width)
+        arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH * .67,
+                                             constants.SCREEN_HEIGHT * .78,
+                                             self.pondhouse)
+        super().draw()
+
+    @staticmethod
+    def sequence_gen(random: Optional[bool] = False) -> Sequence:
+        """Generate a Sequence for the ducky to follow."""
+        seq = Sequence()
+        current = 0
+        for ((x1, y1), (x2, y2)) in zip(POINTS_HINT[:-1], POINTS_HINT[1:]):
+            p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
+            p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
+            frames = 1
+            if random:
+                frames = randint(1, 5)
+            seq.add_keyframes((current, KeyFrame(position=p1)), (current+frames, KeyFrame(position=p2)))
+            current += frames
+        return seq
+
+
+class GameView(arcade.View):
+    """Main application class."""
+
+    def __init__(self, debug: Optional[bool] = False):
+        super().__init__()
+        self.debug = debug
+        if self.debug:
+            POINTS_HINT.clear()
+        self.curtains = Curtains(self)
+        self.curtains.add_scene('swimming_scene', DuckScene(self.debug))
+        self.curtains.set_scene('swimming_scene')
         arcade.set_background_color(arcade.color.WARM_BLACK)
 
-    def setup(self) -> None:
-        """Set up the game variables. Call to re-start the game."""
-        self.background = arcade.load_texture("assets/aaaaAAAA.png")
-        self.pond = arcade.load_texture("assets/duck_pond.png")
+    def on_key_release(self, symbol: int, modifiers: int) -> None:
+        """
+        For use only when debug=True.
 
-        self.held_ducks = []
-        self.held_ducks_original_pos = []
-        for _ in range(10):
-            ducky = _sprites.Ducky(random.choice(constants.DUCKY_LIST), 0.25)
-
-            ducky.position = random.randrange(self.window.width), random.randrange(self.window.height)
-
-            self.ducky_list.append(ducky)
-
-    def on_draw(self) -> None:
-        """Render the screen."""
-        # This command should happen before we start drawing. It will clear
-        # the screen to the background color, and erase what we drew last frame.
-        arcade.start_render()
-
-        arcade.draw_lrwh_rectangle_textured(
-            0, 0, self.window.width, self.window.height, self.background
-        )
-
-        arcade.draw_lrwh_rectangle_textured(
-            self.window.width//4,
-            self.window.height//4,
-            self.window.width//2,
-            self.window.height//2,
-            self.pond
-        )
-        self.ducky_list.draw()
-
-    def on_mouse_motion(self, x: float, y: float, delta_x: float, delta_y: float) -> None:
-        """Called whenever the mouse moves."""
-        for duck in self.held_ducks:
-            duck.center_x += delta_x
-            duck.center_y += delta_y
-
-    def on_mouse_press(self, x: float, y: float, button: int, key_modifiers: int) -> None:
-        """Called when the user presses a mouse button."""
-        # Get all the ducks user has clicked on
-        ducks = arcade.get_sprites_at_point((x, y), self.ducky_list)
-
-        # Are there any clicked?
-        if not ducks:
+        'a' to add a duck
+        'p' to print the generated points_hint list
+        'x' to clear the points
+        """
+        if not self.debug:
             return
-
-        if button == arcade.MOUSE_BUTTON_LEFT:
-            # Get the top one and move that
-            primary_duck = ducks[-1]
-
-            self.held_ducks = [primary_duck]
-            self.held_ducks_original_pos = [self.held_ducks[0].position]
-            self.pull_to_top(self.held_ducks[0])
-        else:
-            self.held_ducks = ducks
-            self.held_ducks_original_pos = [duck.position for duck in ducks]
+        if symbol == ord('a'):
+            if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
+                self.curtains.current_scene.add_a_ducky()
+        elif symbol == ord('p'):
+            print(POINTS_HINT)
+        elif symbol == ord('x'):
+            POINTS_HINT.clear()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
-        """Called when a user releases a mouse button."""
-        # If we don't have any held ducks, who cares
-        if len(self.held_ducks) == 0:
-            return
+        """Add clicked point to points_hint as % of width/height."""
+        POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
-        # We are no longer holding cards
-        self.held_ducks = []
 
-    def on_show_view(self) -> None:
-        """Called when this view is shown."""
-        self.setup()
+def main() -> None:
+    """
+    Main function.
 
-    def pull_to_top(self, duck: arcade.Sprite) -> None:
-        """Pull duck to top of rendering order (last to render, looks on-top)."""
-        # Find the index of the duck
-        index = self.ducky_list.index(duck)
-        # Loop and pull all the other cards down towards the zero end
-        for i in range(index, len(self.ducky_list) - 1):
-            self.ducky_list[i] = self.ducky_list[i + 1]
-        # Put this card at the right-side/top/size of list
-        self.ducky_list[len(self.ducky_list) - 1] = duck
+    Can be run for a GameView in debug mode
+    """
+    window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
+    arcade.set_window(window)
+    game = GameView(debug=True)
+    window.show_view(game)
+    arcade.run()
+
+
+if __name__ == '__main__':
+    main()
