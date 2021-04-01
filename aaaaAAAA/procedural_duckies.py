@@ -24,21 +24,24 @@ def make_ducky() -> ProceduralDucky:
     return ProceduralDuckyGenerator().generate()
 
 
+def _load_image_assets(file_path: str) -> list[tuple[str, Image]]:
+    return [
+        (filename.stem, Image.open(filename))
+        for filename in (ASSETS_PATH / file_path).iterdir()
+        if not filename.is_dir()
+    ]
+
+
 class ProceduralDuckyGenerator:
     """Temporary class used to generate a ducky."""
 
     templates = {
         int(filename.name[0]): Image.open(filename) for filename in (ASSETS_PATH / "silverduck templates").iterdir()
     }
-    hats = [
-        (filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/hats").iterdir()
-    ]
-    equipments = [
-        (filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/equipment").iterdir()
-    ]
-    outfits = [
-        (filename.stem, Image.open(filename)) for filename in (ASSETS_PATH / "accessories/outfits").iterdir()
-    ]
+
+    hats = _load_image_assets("accessories/hats")
+    equipments = _load_image_assets("accessories/equipment")
+    outfits = _load_image_assets("accessories/outfits")
 
     def __init__(self) -> None:
         self.output: Image.Image = Image.new("RGBA", DUCKY_SIZE, color=(0, 0, 0, 0))
