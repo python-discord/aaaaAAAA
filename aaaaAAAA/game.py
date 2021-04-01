@@ -1,8 +1,8 @@
-from random import choice, randint, shuffle
+from random import choice
 from typing import Optional
 
 import arcade
-from arcade_curtains import BaseScene, Chain, Curtains, KeyFrame, Sequence
+from arcade_curtains import BaseScene, Chain, Curtains
 
 from aaaaAAAA import _sprites, constants
 
@@ -23,9 +23,7 @@ class DuckScene(BaseScene):
         self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.075)
         self.ducks.append(self.leader)
-        self.seq = self.sequence_gen()
-        self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
-        self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
+        self.seq = self.leader.path_seq
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -35,12 +33,12 @@ class DuckScene(BaseScene):
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
         self.ducks.append(ducky)
-        seq = self.sequence_gen(random=True)
+        seq = ducky.path_seq
         seq.add_callback(seq.total_time, lambda: self.enter_pondhouse(ducky))
         chain = Chain()
         chain.add_sequences(
             (ducky, seq),
-            (ducky, self.pondhouse_seq)
+            (ducky, ducky.pondhouse_seq)
         )
         self.animations.fire(None, chain)
         if len(self.ducks) >= constants.DUCKS:
@@ -67,41 +65,16 @@ class DuckScene(BaseScene):
                                              constants.SCREEN_HEIGHT * .78,
                                              self.pondhouse)
 
-    @staticmethod
-    def sequence_gen(random: Optional[bool] = False,
-                     loop: Optional[bool] = False,
-                     pond: Optional[bool] = False) -> Sequence:
-        """Generate a Sequence for the ducky to follow."""
-        seq = Sequence(loop=loop)
-        current = 0
-        points = constants.POINTS_HINT
-        if pond:
-            points = constants.POND_HINT
-            if random:
-                shuffle(points)
-        elif loop:
-            points = constants.PONDHOUSE_HINT
-        for ((x1, y1), (x2, y2)) in zip(points[:-1], points[1:]):
-            p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
-            p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
-            frames = 1
-            if random:
-                frames = randint(1, 5)
-            seq.add_keyframes((current, KeyFrame(position=p1)), (current+frames, KeyFrame(position=p2)))
-            current += frames
-        return seq
-
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
         self.pondhouse_ducks.append(ducky)
-        print(self.pondhouse_ducks)
 
     def enter_pond(self, ducky: Optional[_sprites.Ducky] = None) -> None:
         """Grant a ducky entry into the pond."""
         if self.pondhouse_ducks:
             duck = ducky or choice(self.pondhouse_ducks)
             self.pondhouse_ducks.remove(duck)
-            self.animations.fire(duck, self.pond_seq)
+            self.animations.fire(duck, duck.pond_seq)
 
     def grant_entry(self) -> None:
         """Generic method to grant entry."""
