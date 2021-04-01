@@ -42,6 +42,7 @@ class Ducky(arcade.Sprite):
                      pond: Optional[bool] = False) -> Sequence:
         """
         Generate a Sequence for the ducky to follow.
+
         random: if true the transition between points will be between 2 and 5;
                 additionally if pond is true will shuffle the pond points
         loop: sequence will loop and if pond is false will indicate to use the pondhouse points
