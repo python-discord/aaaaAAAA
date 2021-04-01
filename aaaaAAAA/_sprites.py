@@ -11,13 +11,15 @@ class Ducky(arcade.Sprite):
         super().__init__(self.image_file_name, scale, hit_box_algorithm="None", *args, **kwargs)
 
     @staticmethod
-    def expand(self, x: float, y: float):
+    def expand(self: arcade.Sprite, x: float, y: float) -> None:
+        """Slightly grow the sprite size."""
         self.width *= 1.1
         self.height *= 1.1
         self.draw()
 
     @staticmethod
-    def shrink(self, x: float, y: float):
+    def shrink(self: arcade.Sprite, x: float, y: float) -> None:
+        """Slightly retract the sprite size."""
         self.width /= 1.1
         self.height /= 1.1
         self.draw()

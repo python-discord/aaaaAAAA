@@ -1,10 +1,10 @@
 from random import choice, randint
 from typing import Optional
 
-from aaaaAAAA import _sprites, constants
-
 import arcade
-from arcade_curtains import BaseScene, KeyFrame, Sequence, Curtains
+from arcade_curtains import BaseScene, Curtains, KeyFrame, Sequence
+
+from aaaaAAAA import _sprites, constants
 
 
 POINTS_HINT = [(0.004, 0.681), (0.042, 0.77), (0.084, 0.827), (0.118, 0.878),
@@ -17,11 +17,14 @@ DUCKS = 36
 
 
 class DuckScene(BaseScene):
-    def __init__(self, debug=False):
+    """Scene showing Ducks moving down the river to the pondhouse."""
+
+    def __init__(self, debug: Optional[bool] = False):
         self.debug = debug
         super().__init__()
 
-    def setup(self):
+    def setup(self) -> None:
+        """Setup the scene assets."""
         self.background = arcade.load_texture("assets/overworld/overworld placeholder.png")
         self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue pond.png")
         self.pondhouse = arcade.load_texture("assets/overworld/pondhouse.png")
@@ -31,7 +34,7 @@ class DuckScene(BaseScene):
         self.seq = self.sequence_gen()
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
-        """Add a ducky to the scene, register some events, start animating"""
+        """Add a ducky to the scene, register some events and start animating."""
         if not POINTS_HINT:
             return
         ducky = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.05)
@@ -43,13 +46,14 @@ class DuckScene(BaseScene):
         if len(self.ducks) >= DUCKS:
             arcade.unschedule(self.add_a_ducky)
 
-    def enter_scene(self, previous_scene) -> None:
+    def enter_scene(self, previous_scene: BaseScene) -> None:
+        """Start adding duckies on entering the scene."""
         if not self.debug:
             self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(POINTS_HINT)*10/DUCKS)
 
-    def draw(self):
-        """When a duck is drawn."""
+    def draw(self) -> None:
+        """Draw the background environment."""
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
@@ -61,14 +65,14 @@ class DuckScene(BaseScene):
         arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH * .67,
                                              constants.SCREEN_HEIGHT * .78,
                                              self.pondhouse)
-        self.ducks.draw()
+        super().draw()
 
     @staticmethod
     def sequence_gen(random: Optional[bool] = False) -> Sequence:
-        """Generate a Sequence for the ducky to follow"""
+        """Generate a Sequence for the ducky to follow."""
         seq = Sequence()
         current = 0
-        for index, ((x1, y1), (x2, y2)) in enumerate(zip(POINTS_HINT[:-1], POINTS_HINT[1:])):
+        for ((x1, y1), (x2, y2)) in zip(POINTS_HINT[:-1], POINTS_HINT[1:]):
             p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
             p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
             frames = 1
@@ -80,6 +84,8 @@ class DuckScene(BaseScene):
 
 
 class GameView(arcade.View):
+    """Main application class."""
+
     def __init__(self, debug: Optional[bool] = False):
         super().__init__()
         self.debug = debug
@@ -92,6 +98,8 @@ class GameView(arcade.View):
 
     def on_key_release(self, symbol: int, modifiers: int) -> None:
         """
+        For use only when debug=True.
+
         'a' to add a duck
         'p' to print the generated points_hint list
         'x' to clear the points
@@ -107,11 +115,16 @@ class GameView(arcade.View):
             POINTS_HINT.clear()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
-        """Add clicked point to points_hint as % of width/height"""
+        """Add clicked point to points_hint as % of width/height."""
         POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
 
-def main():
+def main() -> None:
+    """
+    Main function.
+
+    Can be run for a GameView in debug mode
+    """
     window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
     game = GameView(debug=True)
