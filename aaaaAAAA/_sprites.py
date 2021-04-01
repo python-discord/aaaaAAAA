@@ -40,7 +40,13 @@ class Ducky(arcade.Sprite):
     def sequence_gen(random: Optional[bool] = False,
                      loop: Optional[bool] = False,
                      pond: Optional[bool] = False) -> Sequence:
-        """Generate a Sequence for the ducky to follow."""
+        """
+        Generate a Sequence for the ducky to follow.
+        random: if true the transition between points will be between 2 and 5;
+                additionally if pond is true will shuffle the pond points
+        loop: sequence will loop and if pond is false will indicate to use the pondhouse points
+        pond: indicates that the pond points are to be used
+        """
         seq = Sequence(loop=loop)
         current = 0
         points = constants.POINTS_HINT
@@ -56,7 +62,7 @@ class Ducky(arcade.Sprite):
             angle = degrees(sin((p2[0]-p1[0])/max((p2[1]-p1[1]), 1)))
             frames = 1
             if random:
-                frames = randint(1, 5)
+                frames = randint(2, 5)
             seq.add_keyframes((current, KeyFrame(position=p1, angle=angle)),
                               (current+frames, KeyFrame(position=p2)))
             current += frames
