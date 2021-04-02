@@ -12,7 +12,7 @@ from aaaaAAAA.game import GameView
 class MenuUIManager(UIManager):
     """A custom UI manager to play a hover sound when an element is hovered."""
 
-    hover_sound = arcade.load_sound("assets/audio/fx/plop_1.ogg")
+    hover_sound = arcade.load_sound("assets/audio/fx/plop_1.mp3")
 
     def __init__(self, window: Optional[arcade.Window] = None, attach_callbacks: bool = True, **kwargs):
         super().__init__(window, attach_callbacks, **kwargs)
