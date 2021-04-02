@@ -2,10 +2,6 @@ SCREEN_WIDTH = 960
 SCREEN_HEIGHT = 640
 SCREEN_TITLE = "aaaaAAAA"
 
-DUCKY_LIST = [
-    "partyduck", "regal_ducky", "wizard_ducky"
-]
-
 DUCKS = 36
 
 POINTS_HINT = [(0.004, 0.681), (0.042, 0.77), (0.084, 0.827), (0.118, 0.878),

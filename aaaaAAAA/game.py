@@ -24,7 +24,7 @@ class DuckScene(BaseScene):
         self.events.out(self.pondhouse, self.pondhouse.opaque)
         self.ducks = arcade.SpriteList()
         self.pondhouse_ducks = arcade.SpriteList()
-        self.leader = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.075)
+        self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
 
@@ -32,7 +32,7 @@ class DuckScene(BaseScene):
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
             return
-        ducky = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.05)
+        ducky = _sprites.Ducky(0.05)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
         self.ducks.append(ducky)
@@ -75,6 +75,7 @@ class DuckScene(BaseScene):
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
+        self.ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
