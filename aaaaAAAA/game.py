@@ -98,17 +98,17 @@ class DuckScene(BaseScene):
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
-    def enter_pond(self, ducky: Optional[_sprites.Ducky] = None) -> None:
-        """Grant a ducky entry into the pond."""
+    def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
+        """Generic method to grant entry. - gateway to the pond"""
         if self.pondhouse_ducks:
             duck = ducky or choice(self.pondhouse_ducks)
             self.pondhouse_ducks.remove(duck)
             self.pond_ducks.append(duck)
-            self.animations.fire(duck, duck.pond_seq)
+            self.enter_pond(duck)
 
-    def grant_entry(self) -> None:
-        """Generic method to grant entry."""
-        self.enter_pond()
+    def enter_pond(self, duck: _sprites.Ducky) -> None:
+        """Grant a ducky entry into the pond."""
+        self.animations.fire(duck, duck.pond_seq)
 
 
 class GameView(arcade.View):
