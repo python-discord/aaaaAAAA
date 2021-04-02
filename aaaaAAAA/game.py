@@ -16,14 +16,13 @@ class DuckScene(BaseScene):
 
     def setup(self) -> None:
         """Setup the scene assets."""
-        self.background = arcade.load_texture("assets/overworld/overworld placeholder.png")
-        self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue Pond.png")
+        self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
         self.pondhouse = _sprites.PondHouse()
         self.pondhouse.position = (constants.SCREEN_WIDTH * .67, constants.SCREEN_HEIGHT * .78)
         self.events.hover(self.pondhouse, self.pondhouse.see_through)
         self.events.out(self.pondhouse, self.pondhouse.opaque)
         self.ducks = arcade.SpriteList()
-        self.pondhouse_ducks = arcade.SpriteList()
+        self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
@@ -51,31 +50,24 @@ class DuckScene(BaseScene):
     def draw(self) -> None:
         """Draw the background environment."""
         if len(self.pondhouse_ducks) > 20:
-            self.background = arcade.load_texture("assets/overworld/overworld scorched earth placeholder.png")
-            self.pond = arcade.load_texture("assets/overworld/ponds/png/Black Pond.png")
+            self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
         elif len(self.pondhouse_ducks) > 15:
-            self.pond = arcade.load_texture("assets/overworld/ponds/png/Purple Pond.png")
+            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
         elif len(self.pondhouse_ducks) > 10:
-            self.background = arcade.load_texture("assets/overworld/overworld dirt placeholder.png")
-            self.pond = arcade.load_texture("assets/overworld/ponds/png/Yellow Pond.png")
+            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
         elif len(self.pondhouse_ducks) > 5:
-            self.pond = arcade.load_texture("assets/overworld/ponds/png/Green Pond.png")
+            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
         else:
-            self.pond = arcade.load_texture("assets/overworld/ponds/png/Blue Pond.png")
+            self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
-        arcade.draw_scaled_texture_rectangle(constants.SCREEN_WIDTH/2,
-                                             constants.SCREEN_HEIGHT * .8,
-                                             self.pond,
-                                             constants.SCREEN_WIDTH/self.pond.image.width)
         super().draw()
         self.pondhouse.draw()
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
-        self.ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 

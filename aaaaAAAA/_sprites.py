@@ -27,7 +27,7 @@ class Ducky(arcade.Sprite):
         self.equipment = ducky.equipment
         self.outfit = ducky.outfit
 
-        self.path_seq = self.sequence_gen(random=True)
+        self.path_seq = self.sequence_gen(random=False)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
 
@@ -83,7 +83,7 @@ class PondHouse(arcade.Sprite):
     """Pondhouse sprite."""
 
     def __init__(self, scale: float = 1, *args, **kwargs):
-        super().__init__("assets/overworld/pondhouse.png", scale,
+        super().__init__("assets/overworld/pondhouse/pondhouse_cropped.png", scale,
                          hit_box_algorithm="None", *args, **kwargs)
 
     @staticmethod
