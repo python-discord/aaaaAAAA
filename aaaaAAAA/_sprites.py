@@ -56,7 +56,9 @@ class Ducky(arcade.Sprite):
             if random:
                 shuffle(points)
         elif loop:
-            points = [constants.POINTS_HINT[-1]] + constants.PONDHOUSE_HINT
+            points = constants.PONDHOUSE_HINT
+            if constants.POINTS_HINT:
+                points.insert(0, constants.POINTS_HINT[-1])
         for ((x1, y1), (x2, y2)) in zip(points[:-1], points[1:]):
             p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
             p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
