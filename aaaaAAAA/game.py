@@ -1,3 +1,4 @@
+from enum import IntEnum
 from random import choice
 from typing import Optional
 
@@ -5,6 +6,15 @@ import arcade
 from arcade_curtains import BaseScene, Curtains
 
 from aaaaAAAA import _sprites, constants
+
+
+class Colour(IntEnum):
+    """Enums for use as sprite colours."""
+
+    Green = 0
+    Yellow = 1
+    Purple = 2
+    Black = 3
 
 
 class DuckScene(BaseScene):
@@ -21,8 +31,8 @@ class DuckScene(BaseScene):
         self.pondhouse.position = (constants.SCREEN_WIDTH * .67, constants.SCREEN_HEIGHT * .78)
         self.events.hover(self.pondhouse, self.pondhouse.see_through)
         self.events.out(self.pondhouse, self.pondhouse.opaque)
+        self.lilies = _sprites.Lily.lilies
         self.ducks = arcade.SpriteList()
-        self.lillies = _sprites.Lily.lillies
         self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
@@ -54,15 +64,23 @@ class DuckScene(BaseScene):
 
     def draw(self) -> None:
         """Draw the background environment."""
-        if len(self.pondhouse_ducks) > 20:
+        if len(self.pondhouse_ducks) >= 20:
             self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
+            for lily in self.lilies:
+                lily.change_texture(Colour.Black)
         elif len(self.pondhouse_ducks) > 15:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Purple)
             self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
         elif len(self.pondhouse_ducks) > 10:
             self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
         elif len(self.pondhouse_ducks) > 5:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Yellow)
             self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
         else:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Green)
             self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
