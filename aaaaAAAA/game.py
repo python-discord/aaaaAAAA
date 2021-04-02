@@ -129,7 +129,7 @@ class GameView(arcade.View):
         'g' grant random duck entry
         """
         if not self.debug:
-            return
+            pass  # temporarily remove this block
         if symbol == ord('a'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
                 self.curtains.current_scene.add_a_ducky()
