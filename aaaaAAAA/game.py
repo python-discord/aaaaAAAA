@@ -22,10 +22,15 @@ class DuckScene(BaseScene):
         self.events.hover(self.pondhouse, self.pondhouse.see_through)
         self.events.out(self.pondhouse, self.pondhouse.opaque)
         self.ducks = arcade.SpriteList()
+        self.lillies = _sprites.Lily.lillies
         self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
+        for x, y in constants.FOLIAGE_POND:
+            pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
+            lily = _sprites.Lily(scale=.075, position=pos)
+            self.events.hover(lily, lily.float_about)
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""

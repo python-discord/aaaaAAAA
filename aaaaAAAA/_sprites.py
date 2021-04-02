@@ -1,3 +1,4 @@
+from enum import IntEnum
 from math import degrees, sin
 from random import randint, shuffle
 from typing import Optional
@@ -11,6 +12,15 @@ from aaaaAAAA import constants
 from aaaaAAAA.procedural_duckies import make_ducky
 
 DUCKY_SPEED = 240
+
+
+class Colour(IntEnum):
+    """Enums for use as sprite colours."""
+
+    Green = 0
+    Yellow = 1
+    Purple = 2
+    Black = 3
 
 
 class Ducky(arcade.Sprite):
@@ -95,3 +105,30 @@ class PondHouse(arcade.Sprite):
     def opaque(sprite: arcade.Sprite, x: float, y: float) -> None:
         """Make the sprite opaque."""
         sprite.alpha = 255
+
+
+class Lily(arcade.Sprite):
+    """Lily sprites."""
+
+    lillies = arcade.SpriteList()
+
+    def __init__(self, scale: float = 1, position: tuple[float, float] = (0, 0), *args, **kwargs):
+        super().__init__(scale=scale, *args, **kwargs)
+        self.lily = randint(1, 4)
+        self.position = position
+        paths = [f"assets/foliage/lillies/png/Lily {self.lily} - {colour}-512.png"
+                 for colour in ('Green', 'Yellow', 'Purple', 'Black')]
+        for path in paths:
+            self.append_texture(arcade.load_texture(path, hit_box_algorithm="None"))
+        self.texture = self.textures[0]
+        self.lillies.append(self)
+
+    @staticmethod
+    def float_about(sprite: arcade.Sprite, x: float, y: float) -> None:
+        """Make the sprite move to x,y - position mouse enters the widget at."""
+        sprite.center_x = x
+        sprite.center_y = y
+
+    def change_texture(self, colour: Optional[str] = 'Green') -> None:
+        """Change the texture used by the sprite."""
+        self.texture = self.textures[Colour[colour]]
