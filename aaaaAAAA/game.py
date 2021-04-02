@@ -33,6 +33,7 @@ class DuckScene(BaseScene):
         self.events.out(self.pondhouse, self.pondhouse.opaque)
         self.lilies = _sprites.Lily.lilies
         self.ducks = arcade.SpriteList()
+        self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
@@ -68,6 +69,9 @@ class DuckScene(BaseScene):
             self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
             for lily in self.lilies:
                 lily.change_texture(Colour.Black)
+            for duck in self.pond_ducks:
+                self.animations.kill(duck)
+                duck.deceased()
         elif len(self.pondhouse_ducks) > 15:
             for lily in self.lilies:
                 lily.change_texture(Colour.Purple)
@@ -99,6 +103,7 @@ class DuckScene(BaseScene):
         if self.pondhouse_ducks:
             duck = ducky or choice(self.pondhouse_ducks)
             self.pondhouse_ducks.remove(duck)
+            self.pond_ducks.append(duck)
             self.animations.fire(duck, duck.pond_seq)
 
     def grant_entry(self) -> None:
@@ -154,7 +159,7 @@ def main() -> None:
     """
     window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
-    game = GameView(debug=True)
+    game = GameView()
     window.show_view(game)
     arcade.run()
 

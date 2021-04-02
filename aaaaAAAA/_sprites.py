@@ -78,6 +78,10 @@ class Ducky(arcade.Sprite):
             current += frames
         return seq
 
+    def deceased(self) -> None:
+        """Turn the Ducky upside down."""
+        self.angle = 180
+
 
 class PondHouse(arcade.Sprite):
     """Pondhouse sprite."""
