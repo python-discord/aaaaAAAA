@@ -1,3 +1,4 @@
+from enum import IntEnum
 from random import choice
 from typing import Optional
 
@@ -5,6 +6,15 @@ import arcade
 from arcade_curtains import BaseScene, Curtains
 
 from aaaaAAAA import _sprites, constants
+
+
+class Colour(IntEnum):
+    """Enums for use as sprite colours."""
+
+    Green = 0
+    Yellow = 1
+    Purple = 2
+    Black = 3
 
 
 class DuckScene(BaseScene):
@@ -21,11 +31,17 @@ class DuckScene(BaseScene):
         self.pondhouse.position = (constants.SCREEN_WIDTH * .67, constants.SCREEN_HEIGHT * .78)
         self.events.hover(self.pondhouse, self.pondhouse.see_through)
         self.events.out(self.pondhouse, self.pondhouse.opaque)
+        self.lilies = _sprites.Lily.lilies
         self.ducks = arcade.SpriteList()
+        self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = []
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
+        for x, y in constants.FOLIAGE_POND:
+            pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
+            lily = _sprites.Lily(scale=.075, position=pos)
+            self.events.hover(lily, lily.float_about)
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -49,15 +65,26 @@ class DuckScene(BaseScene):
 
     def draw(self) -> None:
         """Draw the background environment."""
-        if len(self.pondhouse_ducks) > 20:
+        if len(self.pondhouse_ducks) >= 20:
             self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
+            for lily in self.lilies:
+                lily.change_texture(Colour.Black)
+            for duck in self.pond_ducks:
+                self.animations.kill(duck)
+                duck.deceased()
         elif len(self.pondhouse_ducks) > 15:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Purple)
             self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
         elif len(self.pondhouse_ducks) > 10:
             self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
         elif len(self.pondhouse_ducks) > 5:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Yellow)
             self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
         else:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Green)
             self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
@@ -76,6 +103,7 @@ class DuckScene(BaseScene):
         if self.pondhouse_ducks:
             duck = ducky or choice(self.pondhouse_ducks)
             self.pondhouse_ducks.remove(duck)
+            self.pond_ducks.append(duck)
             self.animations.fire(duck, duck.pond_seq)
 
     def grant_entry(self) -> None:
@@ -106,7 +134,7 @@ class GameView(arcade.View):
         'g' grant random duck entry
         """
         if not self.debug:
-            return
+            pass  # temporarily remove this block
         if symbol == ord('a'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
                 self.curtains.current_scene.add_a_ducky()
@@ -131,7 +159,7 @@ def main() -> None:
     """
     window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
-    game = GameView(debug=True)
+    game = GameView()
     window.show_view(game)
     arcade.run()
 
