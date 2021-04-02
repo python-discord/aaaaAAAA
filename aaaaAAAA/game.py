@@ -21,7 +21,8 @@ class DuckScene(BaseScene):
         self.pondhouse = arcade.load_texture("assets/overworld/pondhouse.png")
         self.ducks = arcade.SpriteList()
         self.pondhouse_ducks = []
-        self.leader = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.075)
+        self.leader = _sprites.Ducky(0.075)
+
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
 
@@ -29,7 +30,7 @@ class DuckScene(BaseScene):
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
             return
-        ducky = _sprites.Ducky(choice(constants.DUCKY_LIST), 0.05)
+        ducky = _sprites.Ducky(0.05)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
         self.ducks.append(ducky)
