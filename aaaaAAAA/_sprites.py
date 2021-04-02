@@ -2,10 +2,13 @@ from math import degrees, sin
 from random import randint, shuffle
 from typing import Optional
 
+import PIL.Image
 import arcade
+from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 
 from aaaaAAAA import constants
+from aaaaAAAA.procedural_duckies import make_ducky
 
 DUCKY_SPEED = 240
 
@@ -13,11 +16,17 @@ DUCKY_SPEED = 240
 class Ducky(arcade.Sprite):
     """Ducky sprite."""
 
-    def __init__(self, ducky_name: str, scale: float = 1, *args, **kwargs):
-        self.image_file_name = f"assets/{ducky_name}.png"
-        super().__init__(self.image_file_name, scale,
-                         hit_box_algorithm="None", flipped_horizontally=True,
-                         *args, **kwargs)
+    def __init__(self, scale: float = 1, *args, **kwargs):
+        ducky = make_ducky()
+        ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+
+        super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
+        self.texture = Texture(ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None")
+
+        self.hat = ducky.hat
+        self.equipment = ducky.equipment
+        self.outfit = ducky.outfit
+
         self.path_seq = self.sequence_gen(random=True)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
