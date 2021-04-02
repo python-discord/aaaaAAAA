@@ -53,10 +53,12 @@ class DuckScene(BaseScene):
     def draw(self) -> None:
         """Draw the background environment."""
         if len(self.pondhouse_ducks) > 20:
+            self.background = arcade.load_texture("assets/overworld/overworld scorched earth placeholder.png")
             self.pond = arcade.load_texture("assets/overworld/ponds/png/Black Pond.png")
         elif len(self.pondhouse_ducks) > 15:
             self.pond = arcade.load_texture("assets/overworld/ponds/png/Purple Pond.png")
         elif len(self.pondhouse_ducks) > 10:
+            self.background = arcade.load_texture("assets/overworld/overworld dirt placeholder.png")
             self.pond = arcade.load_texture("assets/overworld/ponds/png/Yellow Pond.png")
         elif len(self.pondhouse_ducks) > 5:
             self.pond = arcade.load_texture("assets/overworld/ponds/png/Green Pond.png")
