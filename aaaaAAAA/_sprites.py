@@ -27,23 +27,21 @@ class Ducky(arcade.Sprite):
         self.equipment = ducky.equipment
         self.outfit = ducky.outfit
 
-        self.path_seq = self.sequence_gen(random=True)
+        self.path_seq = self.sequence_gen(random=False)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
 
     @staticmethod
-    def expand(self: arcade.Sprite, x: float, y: float) -> None:
+    def expand(sprite: arcade.Sprite, x: float, y: float) -> None:
         """Slightly grow the sprite size."""
-        self.width *= 1.1
-        self.height *= 1.1
-        self.draw()
+        sprite.width *= 1.1
+        sprite.height *= 1.1
 
     @staticmethod
-    def shrink(self: arcade.Sprite, x: float, y: float) -> None:
+    def shrink(sprite: arcade.Sprite, x: float, y: float) -> None:
         """Slightly retract the sprite size."""
-        self.width /= 1.1
-        self.height /= 1.1
-        self.draw()
+        sprite.width /= 1.1
+        sprite.height /= 1.1
 
     @staticmethod
     def sequence_gen(random: Optional[bool] = False,
@@ -79,3 +77,21 @@ class Ducky(arcade.Sprite):
                               (current+frames, KeyFrame(position=p2)))
             current += frames
         return seq
+
+
+class PondHouse(arcade.Sprite):
+    """Pondhouse sprite."""
+
+    def __init__(self, scale: float = 1, *args, **kwargs):
+        super().__init__("assets/overworld/pondhouse/pondhouse_cropped.png", scale,
+                         hit_box_algorithm="None", *args, **kwargs)
+
+    @staticmethod
+    def see_through(sprite: arcade.Sprite, x: float, y: float) -> None:
+        """Make the sprite see through."""
+        sprite.alpha = 75
+
+    @staticmethod
+    def opaque(sprite: arcade.Sprite, x: float, y: float) -> None:
+        """Make the sprite opaque."""
+        sprite.alpha = 255
