@@ -27,10 +27,8 @@ class DuckScene(BaseScene):
     def setup(self) -> None:
         """Setup the scene assets."""
         self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
-        self.pondhouse = _sprites.PondHouse()
+        self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", hit_box_algorithm="None")
         self.pondhouse.position = (constants.SCREEN_WIDTH * .67, constants.SCREEN_HEIGHT * .78)
-        self.events.hover(self.pondhouse, self.pondhouse.see_through)
-        self.events.out(self.pondhouse, self.pondhouse.opaque)
         self.lilies = _sprites.Lily.lilies
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()

@@ -94,24 +94,6 @@ class Ducky(arcade.Sprite):
         return seq
 
 
-class PondHouse(arcade.Sprite):
-    """Pondhouse sprite."""
-
-    def __init__(self, scale: float = 1, *args, **kwargs):
-        super().__init__("assets/overworld/pondhouse/pondhouse_cropped.png", scale,
-                         hit_box_algorithm="None", *args, **kwargs)
-
-    @staticmethod
-    def see_through(sprite: arcade.Sprite, x: float, y: float) -> None:
-        """Make the sprite see through."""
-        sprite.alpha = 75
-
-    @staticmethod
-    def opaque(sprite: arcade.Sprite, x: float, y: float) -> None:
-        """Make the sprite opaque."""
-        sprite.alpha = 255
-
-
 class Lily(arcade.Sprite):
     """Lily sprites."""
 
