@@ -1,7 +1,7 @@
 import queue
 from enum import IntEnum
 from itertools import chain
-from random import choice
+from random import choice, choices
 from typing import Callable, Optional
 
 import arcade
@@ -77,6 +77,7 @@ class DuckScene(BaseScene):
         arcade.load_texture(f"assets/overworld/overworld_{health_level}.png")
         for health_level in ("deadly", "toxic", "disgusting", "decaying", "healthy")
     ]
+    lily_color = (Colour.Black, Colour.Purple, Colour.Yellow, Colour.Yellow, Colour.Green)
 
     def __init__(self, debug: Optional[bool] = False):
         self.debug = debug
@@ -106,6 +107,11 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton(self.allow_ducky))
         self.ui_manager.add_ui_element(AnnihilateButton(self.reject_ducky))
+
+        for x, y in choices(constants.FOLIAGE_POND, k=2):
+            pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
+            lily = _sprites.Lily(scale=.075, position=pos)
+            self.events.hover(lily, lily.float_about)
 
         # TODO: actually load a rule here
         self.active_rule = type("", (), {"matches": lambda ducky: True})
@@ -237,6 +243,8 @@ class DuckScene(BaseScene):
         print("DEBUG: decreasing health")
         self.health -= 1
         self.overworld_texture_blend = 0.0
+        for lily in self.lilies:
+            lily.change_texture(self.lily_color[self.health])
 
         if self.health == 0:
             self.game_over()
