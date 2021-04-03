@@ -116,6 +116,7 @@ class DuckScene(BaseScene):
         self.ui_manager.add_ui_element(AnnihilateButton(self))
 
         self.rule = random.choice(list(RULES.keys()))
+        self.current_duck = 0
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -201,6 +202,8 @@ class DuckScene(BaseScene):
         else:
             self.retract_point()
 
+        self.update_rule()
+
     def deny(self) -> None:
         """Deny the current duck from the pond."""
         if len(self.ducks) == 0:
@@ -213,6 +216,21 @@ class DuckScene(BaseScene):
             self.award_point()
         else:
             self.retract_point()
+
+        self.update_rule()
+
+    def update_rule(self) -> None:
+        """Update the game rule if enough ducks have been proccessed."""
+        if self.current_duck >= 4:
+            self.current_duck = 0
+
+            new_rule = random.choice(list(RULES.keys()))
+            while new_rule == self.rule:
+                new_rule = random.choice(list(RULES.keys()))
+            self.rule = new_rule
+
+        else:
+            self.current_duck += 1
 
     def award_point(self) -> None:
         """Award point for a correct choice."""
