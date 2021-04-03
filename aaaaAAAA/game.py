@@ -74,12 +74,11 @@ class DuckScene(BaseScene):
         self.teller_window.position = (self.teller_window.width / 2, self.teller_window.height / 2)
 
         self.lilies = _sprites.Lily.lilies
-
-        self.ducks = arcade.SpriteList()
+        self.ducks = _sprites.Ducky.ducks
+        self.path_queued_ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
-        self.pondhouse_ducks = []
+        self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.07)
-        self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
         for x, y in constants.FOLIAGE_POND:
             pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
@@ -89,20 +88,23 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton())
         self.ui_manager.add_ui_element(AnnihilateButton())
+        arcade.schedule(self.progress, 2)  # replace with progress logic
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
             return
+        ducks = len(self.ducks) + len(self.path_queued_ducks)
+        if ducks + len(self.pond_ducks) >= constants.DUCKS or ducks >= len(constants.POINTS_HINT):
+            arcade.unschedule(self.add_a_ducky)
+            return
         ducky = _sprites.Ducky(0.07)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
-        self.ducks.append(ducky)
         seq = ducky.path_seq
-        seq.add_callback(seq.total_time, lambda: self.enter_pondhouse(ducky))
+        duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
+        seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
-        if len(self.ducks) >= constants.DUCKS:
-            arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
@@ -141,9 +143,15 @@ class DuckScene(BaseScene):
         self.pondhouse.draw()
         self.teller_window.draw()
 
+    def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
+        """Move the ducky into the path_queue spritelist."""
+        self.ducks.remove(ducky)
+        self.path_queued_ducks.append(ducky)
+        self.animations.kill(ducky)
+
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
-        self.ducks.remove(ducky)
+        self.path_queued_ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
@@ -163,6 +171,15 @@ class DuckScene(BaseScene):
     def enter_pond(self, duck: _sprites.Ducky) -> None:
         """Grant a ducky entry into the pond."""
         self.animations.fire(duck, duck.pond_seq)
+
+    def progress(self, dt: float) -> None:
+        """Progress the ducks on the path."""
+        for ducky in self.path_queued_ducks:
+            move = ducky.next_move()
+            if move:
+                self.animations.fire(ducky, move)
+            else:
+                self.enter_pondhouse(ducky)
 
 
 class GameView(arcade.View):
@@ -202,7 +219,8 @@ class GameView(arcade.View):
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
-        constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
+        if self.debug:
+            constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
 
 def main() -> None:
@@ -213,7 +231,7 @@ def main() -> None:
     """
     window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
-    game = GameView()
+    game = GameView(debug=True)
     window.show_view(game)
     arcade.run()
 
