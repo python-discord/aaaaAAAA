@@ -32,10 +32,10 @@ class Ducky(PydisSprite):
 
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
-        ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
 
         super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
-        self.texture = Texture(ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None")
+        self.texture = Texture(self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None")
 
         self.hat = ducky.hat
         self.equipment = ducky.equipment
@@ -106,6 +106,10 @@ class Ducky(PydisSprite):
         seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
+
+    def __repr__(self) -> str:
+        """Return debug representation."""
+        return f"<{self.__class__.__name__} {self.ducky_name=}>"
 
 
 class Lily(PydisSprite):
