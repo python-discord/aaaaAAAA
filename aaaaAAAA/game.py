@@ -94,6 +94,10 @@ class DuckScene(BaseScene):
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
             return
+        ducks = len(self.ducks) + len(self.path_queued_ducks)
+        if ducks + len(self.pond_ducks) >= constants.DUCKS or ducks >= len(constants.POINTS_HINT):
+            arcade.unschedule(self.add_a_ducky)
+            return
         ducky = _sprites.Ducky(0.07)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
@@ -103,9 +107,6 @@ class DuckScene(BaseScene):
         seq.add_callback(duration, lambda: self.ducks.remove(ducky))
         seq.add_callback(duration, lambda: self.path_queued_ducks.append(ducky))
         self.animations.fire(ducky, seq)
-        ducks = len(self.ducks) + len(self.path_queued_ducks)
-        if ducks + len(self.pond_ducks) >= constants.DUCKS or ducks >= len(constants.POINTS_HINT):
-            arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
