@@ -1,3 +1,4 @@
+import random
 from enum import IntEnum
 from random import choice
 from typing import Optional
@@ -8,6 +9,18 @@ from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
 from aaaaAAAA import _sprites, constants
+
+TEXT_RGB = (70, 89, 134)
+FONT = "assets/fonts/LuckiestGuy-Regular.ttf"
+
+RULES = {
+    "Royal Party - Crowns Only": lambda ducky: ducky.hat == "crown",
+    "Face Warmers - Beards Only": lambda ducky: ducky.outfit == "beard",
+    "Biblical Pool - Halos and Horns\nOnly": lambda ducky: ducky.hat in ("horns", "halo"),
+    "Safe Space - No weapons": lambda ducky: not (ducky.equipment in ("baseball_bat", "lightsaber", "Sword")),
+    "Magical Night - Wizardry": lambda ducky: ducky.hat == "wizard" or ducky.equipment == "wand",
+    "Celebrators - Ducks that have\nsomething to\ncelebrate": lambda ducky: ducky.hat in ("mortarboard", "party")
+}
 
 
 class Colour(IntEnum):
@@ -31,26 +44,38 @@ def load_scaled_texture(name: str, path: str, size: float) -> arcade.Texture:
 class AllowButton(UIImageButton):
     """A class representing the button to allow ducks into the pond."""
 
-    def __init__(self):
+    def __init__(self, scene: "DuckScene"):
         released = load_scaled_texture("allow_released", "assets/overworld/buttons/allow_button.png", 0.18)
         pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.scene = scene
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.735,
                          center_y=window.height * 0.085)
+
+    def on_release(self) -> None:
+        """Call the allow action."""
+        self.scene.allow()
+        super().on_release()
 
 
 class AnnihilateButton(UIImageButton):
     """A class representing the button to annihilate ducks."""
 
-    def __init__(self):
+    def __init__(self, scene: "DuckScene"):
         released = load_scaled_texture("annihilate_released", "assets/overworld/buttons/annihilate_button.png", 0.18)
         pressed = load_scaled_texture("annihilate_pressed",
                                       "assets/overworld/buttons/annihilate_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.scene = scene
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.575,
                          center_y=window.height * 0.12)
+
+    def on_release(self) -> None:
+        """Call the allow action."""
+        self.scene.deny()
+        super().on_release()
 
 
 class DuckScene(BaseScene):
@@ -87,8 +112,10 @@ class DuckScene(BaseScene):
             self.events.hover(lily, lily.float_about)
 
         self.ui_manager = UIManager()
-        self.ui_manager.add_ui_element(AllowButton())
-        self.ui_manager.add_ui_element(AnnihilateButton())
+        self.ui_manager.add_ui_element(AllowButton(self))
+        self.ui_manager.add_ui_element(AnnihilateButton(self))
+
+        self.rule = random.choice(list(RULES.keys()))
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -137,13 +164,70 @@ class DuckScene(BaseScene):
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
+
+        # Draw rule
+        name, description = self.rule.upper().split(" - ")
+
+        name = arcade.draw_text(
+            name, 800, 290, TEXT_RGB, 70,
+            align="center", anchor_x="center", anchor_y="center",
+            font_name=FONT
+        )
+
+        description = arcade.draw_text(
+            description, 800, 270, TEXT_RGB, 70,
+            align="center", anchor_x="center", anchor_y="top",
+            font_name=FONT
+        )
+
+        name.scale = 0.3
+        description.scale = 0.25
+
         super().draw()
         self.pondhouse.draw()
         self.teller_window.draw()
 
+    def allow(self) -> None:
+        """Allow the current duck into the pond."""
+        if len(self.ducks) == 0:
+            return
+        ducky = self.ducks.pop(0)
+
+        self.pondhouse_ducks.append(ducky)
+        self.grant_entry(ducky)
+
+        if RULES[self.rule](ducky):
+            self.award_point()
+        else:
+            self.retract_point()
+
+    def deny(self) -> None:
+        """Deny the current duck from the pond."""
+        if len(self.ducks) == 0:
+            return
+        ducky = self.ducks.pop(0)
+
+        self.explode(ducky)
+
+        if not RULES[self.rule](ducky):
+            self.award_point()
+        else:
+            self.retract_point()
+
+    def award_point(self) -> None:
+        """Award point for a correct choice."""
+        ...
+
+    def retract_point(self) -> None:
+        """Retract point for an incorrect choice."""
+        ...
+
+    def explode(self, ducky: arcade.Sprite) -> None:
+        """Blow up a denied duck."""
+        ...
+
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
-        self.ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
