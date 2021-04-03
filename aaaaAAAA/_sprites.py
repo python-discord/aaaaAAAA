@@ -65,7 +65,7 @@ class Ducky(PydisSprite):
     def sequence_gen(random: Optional[bool] = False,
                      loop: Optional[bool] = False,
                      pond: Optional[bool] = False,
-                     shift: Optional[list[tuple[float, float]]] = False) -> Sequence:
+                     shift: Optional[list[tuple[float, float]]] = None) -> Sequence:
         """
         Generate a Sequence for the ducky to follow.
 

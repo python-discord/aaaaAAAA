@@ -74,8 +74,8 @@ class DuckScene(BaseScene):
         self.teller_window.position = (self.teller_window.width / 2, self.teller_window.height / 2)
 
         self.lilies = _sprites.Lily.lilies
-
         self.ducks = _sprites.Ducky.ducks
+        self.path_queued_ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.07)
@@ -88,7 +88,7 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton())
         self.ui_manager.add_ui_element(AnnihilateButton())
-        arcade.schedule(self.progress, 9)  # replace with progress logic
+        arcade.schedule(self.progress, 1)  # replace with progress logic
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -98,9 +98,13 @@ class DuckScene(BaseScene):
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
-        seq.add_callback(len(constants.POINTS_HINT) - len(self.ducks), lambda: self.animations.kill(ducky))
+        duration = len(constants.POINTS_HINT) - len(self.ducks) + len(self.path_queued_ducks)
+        seq.add_callback(duration+.01, lambda: self.animations.kill(ducky))
+        seq.add_callback(duration, lambda: self.ducks.remove(ducky))
+        seq.add_callback(duration, lambda: self.path_queued_ducks.append(ducky))
         self.animations.fire(ducky, seq)
-        if len(self.ducks) + len(self.pond_ducks) >= constants.DUCKS or len(self.ducks) >= len(constants.POINTS_HINT):
+        ducks = len(self.ducks) + len(self.path_queued_ducks)
+        if ducks + len(self.pond_ducks) >= constants.DUCKS or ducks >= len(constants.POINTS_HINT):
             arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
@@ -142,7 +146,7 @@ class DuckScene(BaseScene):
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
-        self.ducks.remove(ducky)
+        self.path_queued_ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
@@ -165,7 +169,7 @@ class DuckScene(BaseScene):
 
     def progress(self, dt: float) -> None:
         """Progress the ducks on the path."""
-        for ducky in self.ducks:
+        for ducky in self.path_queued_ducks:
             move = ducky.next_move()
             if move:
                 self.animations.fire(ducky, move)
