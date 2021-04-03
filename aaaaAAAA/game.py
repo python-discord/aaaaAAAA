@@ -88,7 +88,6 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton())
         self.ui_manager.add_ui_element(AnnihilateButton())
-        arcade.schedule(self.progress, 3)  # replace with progress logic
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -111,6 +110,7 @@ class DuckScene(BaseScene):
         if not self.debug:
             self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
+            arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS)  # replace with progress logic
 
     def draw(self) -> None:
         """Draw the background environment."""
