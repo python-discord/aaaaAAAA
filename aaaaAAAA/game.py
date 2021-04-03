@@ -132,7 +132,6 @@ class DuckScene(BaseScene):
         """Start adding duckies on entering the scene."""
         if not self.debug:
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
-            arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS * 2)  # replace progress logic
 
     def draw(self) -> None:
         """Draw the background environment."""
@@ -166,6 +165,7 @@ class DuckScene(BaseScene):
         self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
+        self.progress()
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
@@ -213,7 +213,7 @@ class DuckScene(BaseScene):
         """Grant a ducky entry into the pond."""
         self.animations.fire(duck, duck.pond_seq)
 
-    def progress(self, dt: float) -> None:
+    def progress(self, dt: Optional[float] = 0) -> None:
         """Progress the ducks on the path."""
         for ducky in self.path_queued_ducks:
             move = ducky.next_move()
