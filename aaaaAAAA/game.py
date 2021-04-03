@@ -89,6 +89,7 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton())
         self.ui_manager.add_ui_element(AnnihilateButton())
+        arcade.schedule(self.progress, 9)  # replace with progress logic
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -99,7 +100,6 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         self.ducks.append(ducky)
         seq = ducky.path_seq
-        seq.add_callback(seq.total_time, lambda: self.enter_pondhouse(ducky))
         seq.add_callback(len(constants.POINTS_HINT) - len(self.ducks), lambda: self.animations.kill(ducky))
         self.animations.fire(ducky, seq)
         if len(self.ducks) + len(self.pond_ducks) >= constants.DUCKS or len(self.ducks) >= len(constants.POINTS_HINT):
@@ -164,6 +164,15 @@ class DuckScene(BaseScene):
     def enter_pond(self, duck: _sprites.Ducky) -> None:
         """Grant a ducky entry into the pond."""
         self.animations.fire(duck, duck.pond_seq)
+
+    def progress(self, dt: float) -> None:
+        """Progress the ducks on the path."""
+        for ducky in self.ducks:
+            move = ducky.next_move()
+            if move:
+                self.animations.fire(ducky, move)
+            else:
+                self.enter_pondhouse(ducky)
 
 
 class GameView(arcade.View):

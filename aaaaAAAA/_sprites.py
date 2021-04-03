@@ -1,6 +1,6 @@
 from math import degrees, sin
 from random import randint, shuffle
-from typing import Optional
+from typing import Optional, Union
 
 import PIL.Image
 import arcade
@@ -61,7 +61,8 @@ class Ducky(PydisSprite):
     @staticmethod
     def sequence_gen(random: Optional[bool] = False,
                      loop: Optional[bool] = False,
-                     pond: Optional[bool] = False) -> Sequence:
+                     pond: Optional[bool] = False,
+                     shift: Optional[list[tuple[float, float]]] = False) -> Sequence:
         """
         Generate a Sequence for the ducky to follow.
 
@@ -81,6 +82,8 @@ class Ducky(PydisSprite):
             points = constants.PONDHOUSE_HINT
             if constants.POINTS_HINT:
                 points.insert(0, constants.POINTS_HINT[-1])
+        if shift:
+            points = shift
         for ((x1, y1), (x2, y2)) in zip(points[:-1], points[1:]):
             p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
             p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
@@ -106,6 +109,17 @@ class Ducky(PydisSprite):
         seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
+
+    def next_move(self) -> Union[Sequence, None]:
+        """Create a sequence to progress the duck to the next point."""
+        x, y = self.center_x / constants.SCREEN_WIDTH, self.center_y / constants.SCREEN_HEIGHT
+        pos = min(constants.POINTS_HINT, key=lambda pos_xy: (abs(x-pos_xy[0]), abs(y-pos_xy[1])))
+        if pos == constants.POINTS_HINT[-1]:
+            return
+        pos_index = constants.POINTS_HINT.index(pos)
+        print(pos_index)
+        pos2 = constants.POINTS_HINT[pos_index+1]
+        return self.sequence_gen(shift=[pos, pos2])
 
 
 class Lily(PydisSprite):
