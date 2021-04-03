@@ -123,7 +123,6 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
-        print(duration)
         seq.add_callback(duration-1, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
         if len(self.ducks) >= constants.DUCKS:
