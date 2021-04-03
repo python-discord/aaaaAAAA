@@ -95,14 +95,20 @@ class DuckScene(BaseScene):
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
+        self.ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
     def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
-        """Generic method to grant entry. - gateway to the pond"""
+        """Generic method to grant entry. - gateway to the pond."""
         if self.pondhouse_ducks:
             duck = ducky or choice(self.pondhouse_ducks)
             self.pondhouse_ducks.remove(duck)
+            if len(self.pond_ducks) >= constants.POND:
+                ducky_out = choice(self.pond_ducks.sprite_list)
+                seq = ducky_out.off_screen()
+                seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
+                self.animations.fire(ducky_out, seq)
             self.pond_ducks.append(duck)
             self.enter_pond(duck)
 

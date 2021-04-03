@@ -27,9 +27,11 @@ class Ducky(arcade.Sprite):
         self.equipment = ducky.equipment
         self.outfit = ducky.outfit
 
+        self.position = (0, 0)
         self.path_seq = self.sequence_gen(random=False)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
+        self.off_screen = self._off_screen
 
     @staticmethod
     def expand(sprite: arcade.Sprite, x: float, y: float) -> None:
@@ -81,6 +83,16 @@ class Ducky(arcade.Sprite):
     def deceased(self) -> None:
         """Turn the Ducky upside down."""
         self.angle = 180
+
+    def _off_screen(self) -> Sequence:
+        """Return a sequence to move the ducky off screen."""
+        x1, y1 = self.position
+        x2, y2 = constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT * .64
+        angle = degrees(sin((x2 - x1) / max((y2 - y1), 1)))
+        seq = Sequence()
+        seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
+                          (3, KeyFrame(position=(x2, y2), angle=angle)))
+        return seq
 
 
 class PondHouse(arcade.Sprite):
