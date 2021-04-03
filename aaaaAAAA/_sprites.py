@@ -1,6 +1,6 @@
 from math import degrees, sin
 from random import randint, shuffle
-from typing import Optional
+from typing import Optional, Union
 
 import PIL.Image
 import arcade
@@ -30,6 +30,8 @@ class PydisSprite(arcade.Sprite):
 class Ducky(PydisSprite):
     """Ducky sprite."""
 
+    ducks = arcade.SpriteList()
+
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
         ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
@@ -45,6 +47,7 @@ class Ducky(PydisSprite):
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
         self.off_screen = self._off_screen
+        self.ducks.append(self)
 
     @staticmethod
     def expand(sprite: arcade.Sprite, x: float, y: float) -> None:
@@ -61,7 +64,8 @@ class Ducky(PydisSprite):
     @staticmethod
     def sequence_gen(random: Optional[bool] = False,
                      loop: Optional[bool] = False,
-                     pond: Optional[bool] = False) -> Sequence:
+                     pond: Optional[bool] = False,
+                     shift: Optional[list[tuple[float, float]]] = None) -> Sequence:
         """
         Generate a Sequence for the ducky to follow.
 
@@ -81,6 +85,8 @@ class Ducky(PydisSprite):
             points = constants.PONDHOUSE_HINT
             if constants.POINTS_HINT:
                 points.insert(0, constants.POINTS_HINT[-1])
+        if shift:
+            points = shift
         for ((x1, y1), (x2, y2)) in zip(points[:-1], points[1:]):
             p1 = x1 * constants.SCREEN_WIDTH, y1 * constants.SCREEN_HEIGHT
             p2 = x2 * constants.SCREEN_WIDTH, y2 * constants.SCREEN_HEIGHT
@@ -107,6 +113,15 @@ class Ducky(PydisSprite):
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
 
+    def next_move(self) -> Union[Sequence, None]:
+        """Create a sequence to progress the duck to the next point."""
+        x, y = self.center_x / constants.SCREEN_WIDTH, self.center_y / constants.SCREEN_HEIGHT
+        pos = min(constants.POINTS_HINT, key=lambda pos_xy: (abs(x-pos_xy[0]), abs(y-pos_xy[1])))
+        if pos == constants.POINTS_HINT[-1]:
+            return
+        pos_index = constants.POINTS_HINT.index(pos)
+        return self.sequence_gen(shift=constants.POINTS_HINT[pos_index:pos_index+2])
+
 
 class Lily(PydisSprite):
     """Lily sprites."""
@@ -130,6 +145,6 @@ class Lily(PydisSprite):
         sprite.center_x = x
         sprite.center_y = y
 
-    def change_texture(self, colour: Optional[int] = 'Green') -> None:
+    def change_texture(self, colour: Optional[int] = 0) -> None:
         """Change the texture used by the sprite."""
         self.texture = self.textures[colour]
