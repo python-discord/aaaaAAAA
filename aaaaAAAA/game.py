@@ -1,3 +1,4 @@
+import datetime
 import random
 from enum import IntEnum
 from random import choice
@@ -118,6 +119,14 @@ class DuckScene(BaseScene):
         self.rule = random.choice(list(RULES.keys()))
         self.current_duck = 0
 
+        self.toxicity = 0
+        self.streak = 0
+        self.game_end = datetime.datetime.now() + datetime.timedelta(minutes=2)
+
+        self.passed = 0
+        self.failed = 0
+        self.start = datetime.datetime.now()
+
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
@@ -138,33 +147,31 @@ class DuckScene(BaseScene):
             self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
 
-    def draw(self) -> None:
-        """Draw the background environment."""
-        if len(self.pondhouse_ducks) >= 20:
-            self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
-            for lily in self.lilies:
-                lily.change_texture(Colour.Black)
-            for duck in self.pond_ducks:
-                self.animations.kill(duck)
-                duck.deceased()
-        elif len(self.pondhouse_ducks) > 15:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Purple)
-            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 10:
-            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 5:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Yellow)
-            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
-        else:
+    def draw_background(self) -> None:
+        """Draw the correct background for the current toxicity."""
+        if self.toxicity == 0:
             for lily in self.lilies:
                 lily.change_texture(Colour.Green)
             self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
+        elif self.toxicity == 1:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Yellow)
+            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
+        elif self.toxicity == 2:
+            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
+        elif self.toxicity == 3:
+            for lily in self.lilies:
+                lily.change_texture(Colour.Purple)
+            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
+
+    def draw(self) -> None:
+        """Draw the background environment."""
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
+
+        self.draw_background()
 
         # Draw rule
         name, description = self.rule.upper().split(" - ")
@@ -184,12 +191,20 @@ class DuckScene(BaseScene):
         name.scale = 0.3
         description.scale = 0.25
 
+        # Draw remaining time
+        remaining = self.game_end - datetime.datetime.now()
+        if remaining.total_seconds() <= 0:
+            self.end_game()
+
+        arcade.draw_text(str(remaining.seconds), 30, 650, TEXT_RGB, 35, font_name=FONT)
+
         super().draw()
         self.pondhouse.draw()
         self.teller_window.draw()
 
     def allow(self) -> None:
         """Allow the current duck into the pond."""
+        self.end_game()
         if len(self.ducks) == 0:
             return
         ducky = self.ducks.pop(0)
@@ -197,7 +212,7 @@ class DuckScene(BaseScene):
         self.pondhouse_ducks.append(ducky)
         self.grant_entry(ducky)
 
-        if RULES[self.rule](ducky):
+        if True or RULES[self.rule](ducky):
             self.award_point()
         else:
             self.retract_point()
@@ -212,7 +227,7 @@ class DuckScene(BaseScene):
 
         self.explode(ducky)
 
-        if not RULES[self.rule](ducky):
+        if False and not RULES[self.rule](ducky):
             self.award_point()
         else:
             self.retract_point()
@@ -234,11 +249,32 @@ class DuckScene(BaseScene):
 
     def award_point(self) -> None:
         """Award point for a correct choice."""
-        ...
+        self.passed += 1
+
+        self.game_end = self.game_end + datetime.timedelta(seconds=5)
+
+        if self.streak < 0:
+            self.streak = 0
+
+        self.streak += 1
+        if self.streak >= 3:
+            self.toxicity -= 1
+            self.streak = 0
 
     def retract_point(self) -> None:
         """Retract point for an incorrect choice."""
-        ...
+        self.failed += 1
+
+        if self.streak > 0:
+            self.streak = 0
+
+        self.streak -= 1
+        if self.streak <= -2:
+            self.toxicity += 1
+            self.streak = 0
+
+            if self.toxicity == 4:
+                self.end_game()
 
     def explode(self, ducky: arcade.Sprite) -> None:
         """Blow up a denied duck."""
@@ -265,6 +301,53 @@ class DuckScene(BaseScene):
     def enter_pond(self, duck: _sprites.Ducky) -> None:
         """Grant a ducky entry into the pond."""
         self.animations.fire(duck, duck.pond_seq)
+
+    def end_game(self) -> None:
+        """Immediately end the round."""
+        # self.ui_manager.unregister_handlers()
+        # self.curtains
+        # arcade.get_window().show_view(GameOverView(self.passed, self.failed, self.start))
+        ...
+
+
+class GameOverView(arcade.View):
+    """View for the game over screen."""
+
+    def __init__(self, passed: int, failed: int, start_time: datetime.datetime):
+        super().__init__()
+        self.passed = passed
+        self.failed = failed
+        self.start = start_time
+
+    def setup(self) -> None:
+        """Setup the game over screen."""
+        self.background = arcade.load_texture("assets/title-screen/title_screen_no_buttons.png")
+
+    def on_draw(self) -> None:
+        """Draw the game over screen."""
+        # Draw background
+        arcade.start_render()
+        self.background.draw_sized(
+            self.window.width // 2,
+            self.window.height // 2,
+            self.window.width,
+            self.window.height
+        )
+
+        # Draw play time
+        total = datetime.datetime.now() - self.start
+        arcade.draw_text(
+            f"Total Play Time: {total.seconds}s",
+            constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2 - 50, TEXT_RGB, 75, font_name=FONT,
+            align="center", anchor_x="center", anchor_y="bottom"
+        )
+
+        # Draw score breakdown
+        arcade.draw_text(
+            f"Correct: {self.passed} | Mistakes: {self.failed}",
+            constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2, TEXT_RGB, 75, font_name=FONT,
+            align="center", anchor_x="center", anchor_y="center"
+        )
 
 
 class GameView(arcade.View):
