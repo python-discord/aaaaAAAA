@@ -32,7 +32,7 @@ class DuckScene(BaseScene):
         self.lilies = _sprites.Lily.lilies
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
-        self.pondhouse_ducks = []
+        self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.075)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
