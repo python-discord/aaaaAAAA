@@ -100,8 +100,9 @@ class DuckScene(BaseScene):
         self.ducks.append(ducky)
         seq = ducky.path_seq
         seq.add_callback(seq.total_time, lambda: self.enter_pondhouse(ducky))
+        seq.add_callback(len(constants.POINTS_HINT) - len(self.ducks), lambda: self.animations.kill(ducky))
         self.animations.fire(ducky, seq)
-        if len(self.ducks) >= constants.DUCKS:
+        if len(self.ducks) + len(self.pond_ducks) >= constants.DUCKS or len(self.ducks) >= len(constants.POINTS_HINT):
             arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
@@ -214,7 +215,7 @@ def main() -> None:
     """
     window = arcade.Window(title=constants.SCREEN_TITLE, width=constants.SCREEN_WIDTH, height=constants.SCREEN_HEIGHT)
     arcade.set_window(window)
-    game = GameView()
+    game = GameView(debug=True)
     window.show_view(game)
     arcade.run()
 
