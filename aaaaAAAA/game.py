@@ -103,9 +103,7 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
-        seq.add_callback(duration+.01, lambda: self.animations.kill(ducky))
-        seq.add_callback(duration, lambda: self.ducks.remove(ducky))
-        seq.add_callback(duration, lambda: self.path_queued_ducks.append(ducky))
+        seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
@@ -144,6 +142,12 @@ class DuckScene(BaseScene):
         super().draw()
         self.pondhouse.draw()
         self.teller_window.draw()
+
+    def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
+        """Move the ducky into the path_queue spritelist."""
+        self.ducks.remove(ducky)
+        self.path_queued_ducks.append(ducky)
+        self.animations.kill(ducky)
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
