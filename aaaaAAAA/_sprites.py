@@ -13,7 +13,21 @@ from aaaaAAAA.procedural_duckies import make_ducky
 DUCKY_SPEED = 240
 
 
-class Ducky(arcade.Sprite):
+class PydisSprite(arcade.Sprite):
+    """Base sprite type."""
+
+    def __lt__(self, other: arcade.Sprite):
+        """Compare two sprites by their sprite list texture ids."""
+        # Fixes a bug in arcade.Sprite where the code for overlapping sprites is
+        # not updated for how sprite lists now work with textures
+        if not other.sprite_lists:
+            return self
+        if not self.sprite_lists:
+            return other
+        return max(i.texture_id for i in self.sprite_lists) < max(i.texture_id for i in other.sprite_lists)
+
+
+class Ducky(PydisSprite):
     """Ducky sprite."""
 
     def __init__(self, scale: float = 1, *args, **kwargs):
@@ -94,7 +108,7 @@ class Ducky(arcade.Sprite):
         return seq
 
 
-class Lily(arcade.Sprite):
+class Lily(PydisSprite):
     """Lily sprites."""
 
     lilies = arcade.SpriteList()
