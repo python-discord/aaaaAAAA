@@ -78,9 +78,6 @@ class DuckScene(BaseScene):
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = []
-        self.leader = _sprites.Ducky(0.07)
-        self.ducks.append(self.leader)
-        self.seq = self.leader.path_seq
         for x, y in constants.FOLIAGE_POND:
             pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
             lily = _sprites.Lily(scale=.075, position=pos)
@@ -107,7 +104,6 @@ class DuckScene(BaseScene):
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
         if not self.debug:
-            self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
 
     def draw(self) -> None:
