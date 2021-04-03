@@ -6,6 +6,7 @@ from typing import Optional
 
 import arcade
 from PIL import Image
+from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
@@ -25,12 +26,20 @@ RULES = {
 
 
 class Colour(IntEnum):
-    """Enums for use as sprite colours."""
+    """Sprite colors."""
+    GREEN = 0
+    YELLOW = 1
+    PURPLE = 2
+    BLACK = 3
 
-    Green = 0
-    Yellow = 1
-    Purple = 2
-    Black = 3
+
+class Toxicity(IntEnum):
+    """Toxicity levels for the overworld."""
+    HEALTHY = 0
+    DECAYING = 1
+    DISGUSTING = 2
+    TOXIC = 3
+    DEADLY = 4
 
 
 def load_scaled_texture(name: str, path: str, size: float) -> arcade.Texture:
@@ -91,6 +100,51 @@ class DuckScene(BaseScene):
         window = arcade.get_window()
         scale = window.width / constants.SCREEN_WIDTH
 
+        self.toxicity = Toxicity.HEALTHY
+        self.toxicity_assets = [
+            {
+                "level": Toxicity.HEALTHY,
+                "lily_color": Colour.GREEN,
+                "overworld": arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png"),
+                "music": arcade.load_sound("assets/audio/music/Overworld - Healthy.mp3")
+            },
+            {
+                "level": Toxicity.DECAYING,
+                "lily_color": Colour.YELLOW,
+                "overworld": arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png"),
+                "music": arcade.load_sound("assets/audio/music/Overworld - Decaying.mp3")
+            },
+            {
+                "level": Toxicity.DISGUSTING,
+                "lily_color": Colour.YELLOW,
+                "overworld": arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png"),
+                "music": arcade.load_sound("assets/audio/music/Overworld - Disgusting.mp3")
+            },
+            {
+                "level": Toxicity.TOXIC,
+                "lily_color": Colour.PURPLE,
+                "overworld": arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png"),
+                "music": arcade.load_sound("assets/audio/music/Overworld - Toxic.mp3")
+            },
+            {
+                "level": Toxicity.DEADLY,
+                "lily_color": Colour.BLACK,
+                "overworld": arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png"),
+                "music": arcade.load_sound("assets/audio/music/Overworld - Deadly.mp3")
+            },
+        ]
+
+        # Play all the music at the same time, but set volumes to 0 for all but the active one.
+        # This way, hopefully, we'll be able to switch between them smoothly.
+        for asset in self.toxicity_assets:
+            level = asset['level']
+            if level == self.toxicity:
+                player = arcade.play_sound(asset["music"], looping=True)
+            else:
+                player = arcade.play_sound(asset["music"], looping=True, volume=0.0)
+
+            self.toxicity_assets[level]["player"] = player
+
         self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
 
         self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", scale=scale)
@@ -106,6 +160,7 @@ class DuckScene(BaseScene):
         self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.07)
         self.seq = self.leader.path_seq
+
         for x, y in constants.FOLIAGE_POND:
             pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
             lily = _sprites.Lily(scale=.075, position=pos)
@@ -118,7 +173,6 @@ class DuckScene(BaseScene):
         self.rule = random.choice(list(RULES.keys()))
         self.current_duck = 0
 
-        self.toxicity = 0
         self.streak = 0
         self.game_end = datetime.datetime.now() + datetime.timedelta(minutes=2)
 
@@ -149,22 +203,37 @@ class DuckScene(BaseScene):
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
             arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS)  # replace with progress logic
 
-    def draw_background(self) -> None:
+    def alter_toxicity(self, change_by: int) -> None:
+        """Handle toxicity-related changes."""
+        self.toxicity += change_by
+
+        if self.toxicity == Toxicity.DEADLY:
+            self.end_game()
+            return
+
+        assets = self.toxicity_assets[self.toxicity]
+        lily_color = assets["lily_color"]
+        music_player = assets["player"]
+        overworld = assets["overworld"]
+        all_music_players = [asset["player"] for asset in self.toxicity_assets]
+
+        # Set the lilies to the right toxicity
+        for lily in self.lilies:
+            lily.change_texture(lily_color)
+
+        # Set the background
+        self.background = overworld
+
+        # Silence the players
+        for player in all_music_players:
+            player.volume = 0.0
+
+        # Set the main player to play
+        music_player.volume = 1.0
+
+    def draw_background(self, background: Texture) -> None:
         """Draw the correct background for the current toxicity."""
-        if self.toxicity == 0:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Green)
-            self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
-        elif self.toxicity == 1:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Yellow)
-            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
-        elif self.toxicity == 2:
-            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
-        elif self.toxicity == 3:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Purple)
-            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
+        self.background = background
 
     def draw(self) -> None:
         """Draw the background environment."""
@@ -173,7 +242,8 @@ class DuckScene(BaseScene):
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
 
-        self.draw_background()
+        background = self.toxicity_assets[self.toxicity]["overworld"]
+        self.draw_background(background)
 
         # Draw rule
         name, description = self.rule.upper().split(" - ")
@@ -260,7 +330,7 @@ class DuckScene(BaseScene):
 
         self.streak += 1
         if self.streak >= 3:
-            self.toxicity -= 1
+            self.alter_toxicity(-1)
             self.streak = 0
 
     def retract_point(self) -> None:
@@ -272,11 +342,8 @@ class DuckScene(BaseScene):
 
         self.streak -= 1
         if self.streak <= -2:
-            self.toxicity += 1
+            self.alter_toxicity(+1)
             self.streak = 0
-
-            if self.toxicity == 4:
-                self.end_game()
 
     def explode(self, ducky: arcade.Sprite) -> None:
         """Blow up a denied duck."""
@@ -284,13 +351,12 @@ class DuckScene(BaseScene):
 
     def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
         """Move the ducky into the path_queue spritelist."""
-        self.ducks.remove(ducky)
+        # self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
-        self.path_queued_ducks.remove(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
@@ -367,6 +433,7 @@ class GameOverView(arcade.View):
             align="center", anchor_x="center", anchor_y="center"
         )
 
+
 class GameView(arcade.View):
     """Main application class."""
 
@@ -401,6 +468,10 @@ class GameView(arcade.View):
         elif symbol == ord('g'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
                 self.curtains.current_scene.grant_entry()
+        elif symbol == ord('t'):
+            self.curtains.current_scene.alter_toxicity(+1)
+        elif symbol == ord('y'):
+            self.curtains.current_scene.alter_toxicity(-1)
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
