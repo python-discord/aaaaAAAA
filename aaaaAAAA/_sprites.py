@@ -30,6 +30,8 @@ class PydisSprite(arcade.Sprite):
 class Ducky(PydisSprite):
     """Ducky sprite."""
 
+    ducks = arcade.SpriteList()
+
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
         ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
@@ -45,6 +47,7 @@ class Ducky(PydisSprite):
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
         self.off_screen = self._off_screen
+        self.ducks.append(self)
 
     @staticmethod
     def expand(sprite: arcade.Sprite, x: float, y: float) -> None:
@@ -118,6 +121,9 @@ class Ducky(PydisSprite):
             return
         pos_index = constants.POINTS_HINT.index(pos)
         pos2 = constants.POINTS_HINT[pos_index+1]
+        x2, y2 = pos2[0] * constants.SCREEN_WIDTH, pos[1] * constants.SCREEN_HEIGHT
+        if arcade.get_sprites_at_point((x2, y2), self.ducks):
+            pos2 = pos
         return self.sequence_gen(shift=[pos, pos2])
 
 

@@ -75,11 +75,10 @@ class DuckScene(BaseScene):
 
         self.lilies = _sprites.Lily.lilies
 
-        self.ducks = arcade.SpriteList()
+        self.ducks = _sprites.Ducky.ducks
         self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.07)
-        self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
         for x, y in constants.FOLIAGE_POND:
             pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
@@ -98,7 +97,6 @@ class DuckScene(BaseScene):
         ducky = _sprites.Ducky(0.07)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
-        self.ducks.append(ducky)
         seq = ducky.path_seq
         seq.add_callback(len(constants.POINTS_HINT) - len(self.ducks), lambda: self.animations.kill(ducky))
         self.animations.fire(ducky, seq)
