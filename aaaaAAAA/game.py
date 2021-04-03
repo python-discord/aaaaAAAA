@@ -3,6 +3,8 @@ from random import choice
 from typing import Optional
 
 import arcade
+from PIL import Image
+from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
 from aaaaAAAA import _sprites, constants
@@ -17,6 +19,40 @@ class Colour(IntEnum):
     Black = 3
 
 
+def load_scaled_texture(name: str, path: str, size: float) -> arcade.Texture:
+    """Load a texture from a path with a specific size in relation to the window."""
+    window = arcade.get_window()
+    size = (window.width * size, window.height * size)
+    image = Image.open(path)
+    image.thumbnail(size)
+    return arcade.Texture(name, image, hit_box_algorithm="Detailed")
+
+
+class AllowButton(UIImageButton):
+    """A class representing the button to allow ducks into the pond."""
+
+    def __init__(self):
+        released = load_scaled_texture("allow_released", "assets/overworld/buttons/allow_button.png", 0.18)
+        pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
+        window = arcade.get_window()
+        super().__init__(released, press_texture=pressed,
+                         center_x=window.width * 0.735,
+                         center_y=window.height * 0.085)
+
+
+class AnnihilateButton(UIImageButton):
+    """A class representing the button to annihilate ducks."""
+
+    def __init__(self):
+        released = load_scaled_texture("annihilate_released", "assets/overworld/buttons/annihilate_button.png", 0.18)
+        pressed = load_scaled_texture("annihilate_pressed",
+                                      "assets/overworld/buttons/annihilate_button_depressed.png", 0.18)
+        window = arcade.get_window()
+        super().__init__(released, press_texture=pressed,
+                         center_x=window.width * 0.575,
+                         center_y=window.height * 0.12)
+
+
 class DuckScene(BaseScene):
     """Scene showing Ducks moving down the river to the pondhouse."""
 
@@ -26,14 +62,23 @@ class DuckScene(BaseScene):
 
     def setup(self) -> None:
         """Setup the scene assets."""
+        window = arcade.get_window()
+        scale = window.width / constants.SCREEN_WIDTH
+
         self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
-        self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", hit_box_algorithm="None")
-        self.pondhouse.position = (constants.SCREEN_WIDTH * .67, constants.SCREEN_HEIGHT * .78)
+
+        self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", scale=scale)
+        self.pondhouse.position = (window.width * .66, window.height * .76)
+
+        self.teller_window = arcade.Sprite("assets/overworld/teller window/teller_window.png", scale=scale)
+        self.teller_window.position = (self.teller_window.width / 2, self.teller_window.height / 2)
+
         self.lilies = _sprites.Lily.lilies
+
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = arcade.SpriteList()
-        self.leader = _sprites.Ducky(0.075)
+        self.leader = _sprites.Ducky(0.07)
         self.ducks.append(self.leader)
         self.seq = self.leader.path_seq
         for x, y in constants.FOLIAGE_POND:
@@ -41,11 +86,15 @@ class DuckScene(BaseScene):
             lily = _sprites.Lily(scale=.075, position=pos)
             self.events.hover(lily, lily.float_about)
 
+        self.ui_manager = UIManager()
+        self.ui_manager.add_ui_element(AllowButton())
+        self.ui_manager.add_ui_element(AnnihilateButton())
+
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
         if not constants.POINTS_HINT:
             return
-        ducky = _sprites.Ducky(0.05)
+        ducky = _sprites.Ducky(0.07)
         self.events.hover(ducky, ducky.expand)
         self.events.out(ducky, ducky.shrink)
         self.ducks.append(ducky)
@@ -90,6 +139,7 @@ class DuckScene(BaseScene):
         )
         super().draw()
         self.pondhouse.draw()
+        self.teller_window.draw()
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
