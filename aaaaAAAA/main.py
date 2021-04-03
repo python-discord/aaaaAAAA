@@ -51,7 +51,7 @@ class MenuButton(UIGhostFlatButton):
             font_color=arcade.color.WHITE,
             font_color_hover=arcade.color.WHITE,
             font_color_press=arcade.color.WHITE,
-            font_name="assets/title-screen/LuckiestGuy-Regular.ttf",
+            font_name="assets/fonts/LuckiestGuy-Regular.ttf",
             font_size=35
         )
 
@@ -103,7 +103,7 @@ class ExitButton(MenuButton):
 class MenuView(arcade.View):
     """Main menu view."""
 
-    background_music = arcade.load_sound("assets/title-screen/PLACEHOLDER_Dubrovnik_lemonsaurus_title_screen_music.mp3")
+    background_music = arcade.load_sound("assets/audio/music/Title Screen.mp3")
 
     def __init__(self):
         """Initialize the view."""
