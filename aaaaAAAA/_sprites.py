@@ -4,6 +4,7 @@ from typing import Optional
 
 import PIL.Image
 import arcade
+from PIL.ImageChops import blend
 from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 
@@ -136,6 +137,6 @@ class Lily(PydisSprite):
         sprite.center_x = x
         sprite.center_y = y
 
-    def change_texture(self, colour: Optional[int] = 'Green') -> None:
+    def change_texture(self, colour: int) -> None:
         """Change the texture used by the sprite."""
         self.texture = self.textures[colour]

@@ -5,6 +5,8 @@ from typing import Callable, Optional
 
 import arcade
 from PIL import Image
+from PIL.ImageChops import blend
+from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
@@ -68,6 +70,12 @@ class AnnihilateButton(UIImageButton):
 
 class DuckScene(BaseScene):
     """Scene showing Ducks moving down the river to the pondhouse."""
+    # Background texture depending on the health level
+    overworld_background = [
+        arcade.load_texture(f"assets/overworld/overworld_{health_level}_no_lilies.png")
+        for health_level in ("deadly", "toxic", "disgusting", "decaying", "healthy")
+    ]
+    lily_color = (Colour.Black, Colour.Purple, Colour.Yellow, Colour.Yellow, Colour.Green)
 
     def __init__(self, debug: Optional[bool] = False):
         self.debug = debug
@@ -78,7 +86,9 @@ class DuckScene(BaseScene):
         window = arcade.get_window()
         scale = window.width / constants.SCREEN_WIDTH
 
-        self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
+        self.health = 4
+        self.background = self.overworld_background[self.health]
+        self.overworld_texture_blend = 1.0
 
         self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", scale=scale)
         self.pondhouse.position = (window.width * .66, window.height * .76)
@@ -124,32 +134,29 @@ class DuckScene(BaseScene):
 
     def draw(self) -> None:
         """Draw the background environment."""
-        if self.pondhouse_ducks.qsize() >= 20:
-            self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
-            for lily in self.lilies:
-                lily.change_texture(Colour.Black)
-            for duck in self.pond_ducks:
-                self.animations.kill(duck)
-                duck.deceased()
-        elif self.pondhouse_ducks.qsize() > 15:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Purple)
-            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
-        elif self.pondhouse_ducks.qsize() > 10:
-            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
-        elif self.pondhouse_ducks.qsize() > 5:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Yellow)
-            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
+        # If we aren't fading anything, we just use the texture
+        if self.overworld_texture_blend == 1.0:
+            self.background = self.overworld_background[self.health]
         else:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Green)
-            self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
+            texture = blend(
+                self.overworld_background[self.health].image,
+                self.overworld_background[self.health + 1].image,
+                1.0 - self.overworld_texture_blend
+            )
+            self.background = Texture(f"background-{self.health}-{self.overworld_texture_blend}", texture)
+
+            self.overworld_texture_blend += .01
+
+            # I hate floating points
+            if self.overworld_texture_blend > 1.0:
+                self.overworld_texture_blend = 1.0
+
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
         super().draw()
+        self.lilies.draw()
         self.pondhouse.draw()
         self.teller_window.draw()
 
@@ -212,7 +219,14 @@ class DuckScene(BaseScene):
     def decrease_health(self) -> None:
         """Decrease the player's health points."""
         print("DEBUG: decreasing health")
-        # TODO: actual code
+        self.health -= 1
+        self.overworld_texture_blend = 0.0
+
+        for lily in self.lilies:
+            lily.change_texture(self.lily_color[self.health])
+
+        if self.health == 0:
+            self.game_over()
 
 
 class GameView(arcade.View):
@@ -235,6 +249,7 @@ class GameView(arcade.View):
         'a' to add a duck
         'p' to print the generated points_hint list
         'x' to clear the points
+        'd' to decrease health
         """
         if not self.debug:
             pass  # temporarily remove this block
@@ -245,6 +260,9 @@ class GameView(arcade.View):
             print(constants.POINTS_HINT)
         elif symbol == ord('x'):
             constants.POINTS_HINT.clear()
+        elif symbol == ord('d'):
+            if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
+                self.curtains.current_scene.decrease_health()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
