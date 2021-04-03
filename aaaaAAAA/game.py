@@ -72,10 +72,9 @@ class DuckScene(BaseScene):
     """Scene showing Ducks moving down the river to the pondhouse."""
     # Background texture depending on the health level
     overworld_background = [
-        arcade.load_texture(f"assets/overworld/overworld_{health_level}_no_lilies.png")
+        arcade.load_texture(f"assets/overworld/overworld_{health_level}.png")
         for health_level in ("deadly", "toxic", "disgusting", "decaying", "healthy")
     ]
-    lily_color = (Colour.Black, Colour.Purple, Colour.Yellow, Colour.Yellow, Colour.Green)
 
     def __init__(self, debug: Optional[bool] = False):
         self.debug = debug
@@ -101,10 +100,6 @@ class DuckScene(BaseScene):
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
         self.pondhouse_ducks = queue.SimpleQueue()
-        for x, y in constants.FOLIAGE_POND:
-            pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
-            lily = _sprites.Lily(scale=.075, position=pos)
-            self.events.hover(lily, lily.float_about)
 
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton(self.allow_ducky))
@@ -156,7 +151,6 @@ class DuckScene(BaseScene):
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
         super().draw()
-        self.lilies.draw()
         self.pondhouse.draw()
         self.teller_window.draw()
 
@@ -221,9 +215,6 @@ class DuckScene(BaseScene):
         print("DEBUG: decreasing health")
         self.health -= 1
         self.overworld_texture_blend = 0.0
-
-        for lily in self.lilies:
-            lily.change_texture(self.lily_color[self.health])
 
         if self.health == 0:
             self.game_over()
