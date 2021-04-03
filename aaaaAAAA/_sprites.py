@@ -143,6 +143,6 @@ class Lily(PydisSprite):
         sprite.center_x = x
         sprite.center_y = y
 
-    def change_texture(self, colour: Optional[int] = 'Green') -> None:
+    def change_texture(self, colour: Optional[int] = 0) -> None:
         """Change the texture used by the sprite."""
         self.texture = self.textures[colour]
