@@ -88,7 +88,7 @@ class DuckScene(BaseScene):
         self.ui_manager = UIManager()
         self.ui_manager.add_ui_element(AllowButton())
         self.ui_manager.add_ui_element(AnnihilateButton())
-        arcade.schedule(self.progress, 2)  # replace with progress logic
+        arcade.schedule(self.progress, 3)  # replace with progress logic
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
