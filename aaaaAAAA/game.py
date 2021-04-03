@@ -124,7 +124,7 @@ class DuckScene(BaseScene):
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
         print(duration)
-        seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
+        seq.add_callback(duration-1, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
         if len(self.ducks) >= constants.DUCKS:
             arcade.unschedule(self.add_a_ducky)
@@ -164,8 +164,6 @@ class DuckScene(BaseScene):
 
     def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
         """Move the ducky into the path_queue spritelist."""
-        print(self.ducks.sprite_list)
-        return  # Something needs fixed here
         self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
