@@ -4,7 +4,6 @@ from typing import Optional
 
 import PIL.Image
 import arcade
-from PIL.ImageChops import blend
 from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 

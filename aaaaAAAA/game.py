@@ -1,5 +1,6 @@
 import queue
 from enum import IntEnum
+from itertools import chain
 from random import choice
 from typing import Callable, Optional
 
@@ -70,6 +71,7 @@ class AnnihilateButton(UIImageButton):
 
 class DuckScene(BaseScene):
     """Scene showing Ducks moving down the river to the pondhouse."""
+
     # Background texture depending on the health level
     overworld_background = [
         arcade.load_texture(f"assets/overworld/overworld_{health_level}.png")
@@ -218,6 +220,21 @@ class DuckScene(BaseScene):
 
         if self.health == 0:
             self.game_over()
+
+    def game_over(self) -> None:
+        """End the game."""
+        # Cancel animations
+        self.animations.animations.clear()
+        # Stop new duckies
+        arcade.unschedule(self.add_a_ducky)
+        # Clear the waiting line
+        while not self.pondhouse_ducks.empty():
+            self.pondhouse_ducks.get()
+        # Remove the ducky from the teller
+        self.show_human_ducky(None)
+        # Put the duckies upside down
+        for ducky in chain(self.pond_ducks, self.ducks):
+            ducky.deceased()
 
 
 class GameView(arcade.View):
