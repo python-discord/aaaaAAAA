@@ -35,7 +35,9 @@ class Ducky(PydisSprite):
         self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
 
         super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
-        self.texture = Texture(self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None")
+        self.texture = Texture(
+            self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"
+        )
 
         self.hat = ducky.hat
         self.equipment = ducky.equipment

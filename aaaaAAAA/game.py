@@ -1,6 +1,7 @@
+import queue
 from enum import IntEnum
 from random import choice
-from typing import Optional
+from typing import Callable, Optional
 
 import arcade
 from PIL import Image
@@ -31,26 +32,38 @@ def load_scaled_texture(name: str, path: str, size: float) -> arcade.Texture:
 class AllowButton(UIImageButton):
     """A class representing the button to allow ducks into the pond."""
 
-    def __init__(self):
+    def __init__(self, callback: Callable):
         released = load_scaled_texture("allow_released", "assets/overworld/buttons/allow_button.png", 0.18)
         pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.callback = callback
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.735,
                          center_y=window.height * 0.085)
+
+    def on_press(self) -> None:
+        """Run the handler."""
+        super().on_press()
+        self.callback()
 
 
 class AnnihilateButton(UIImageButton):
     """A class representing the button to annihilate ducks."""
 
-    def __init__(self):
+    def __init__(self, callback: Callable):
         released = load_scaled_texture("annihilate_released", "assets/overworld/buttons/annihilate_button.png", 0.18)
         pressed = load_scaled_texture("annihilate_pressed",
                                       "assets/overworld/buttons/annihilate_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.callback = callback
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.575,
                          center_y=window.height * 0.12)
+
+    def on_press(self) -> None:
+        """Run the handler."""
+        super().on_press()
+        self.callback()
 
 
 class DuckScene(BaseScene):
@@ -77,15 +90,18 @@ class DuckScene(BaseScene):
 
         self.ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
-        self.pondhouse_ducks = []
+        self.pondhouse_ducks = queue.SimpleQueue()
         for x, y in constants.FOLIAGE_POND:
             pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
             lily = _sprites.Lily(scale=.075, position=pos)
             self.events.hover(lily, lily.float_about)
 
         self.ui_manager = UIManager()
-        self.ui_manager.add_ui_element(AllowButton())
-        self.ui_manager.add_ui_element(AnnihilateButton())
+        self.ui_manager.add_ui_element(AllowButton(self.allow_ducky))
+        self.ui_manager.add_ui_element(AnnihilateButton(self.reject_ducky))
+
+        # TODO: actually load a rule here
+        self.active_rule = type("", (), {"matches": lambda ducky: True})
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -108,20 +124,20 @@ class DuckScene(BaseScene):
 
     def draw(self) -> None:
         """Draw the background environment."""
-        if len(self.pondhouse_ducks) >= 20:
+        if self.pondhouse_ducks.qsize() >= 20:
             self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
             for lily in self.lilies:
                 lily.change_texture(Colour.Black)
             for duck in self.pond_ducks:
                 self.animations.kill(duck)
                 duck.deceased()
-        elif len(self.pondhouse_ducks) > 15:
+        elif self.pondhouse_ducks.qsize() > 15:
             for lily in self.lilies:
                 lily.change_texture(Colour.Purple)
             self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 10:
+        elif self.pondhouse_ducks.qsize() > 10:
             self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 5:
+        elif self.pondhouse_ducks.qsize() > 5:
             for lily in self.lilies:
                 lily.change_texture(Colour.Yellow)
             self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
@@ -140,25 +156,63 @@ class DuckScene(BaseScene):
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
         self.ducks.remove(ducky)
-        self.pondhouse_ducks.append(ducky)
+        if self.pondhouse_ducks.empty():
+            self.show_human_ducky(ducky)
+        self.pondhouse_ducks.put(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
-    def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
+    def allow_ducky(self) -> None:
+        """Allow a ducky into the pond."""
+        if self.pondhouse_ducks.empty():
+            return
+
+        ducky = self.pondhouse_ducks.get()
+
+        if not self.active_rule.matches(ducky):
+            self.decrease_health()
+
+        self.grant_entry(ducky)
+
+    def reject_ducky(self) -> None:
+        """Annihilate the ducky."""
+        if self.pondhouse_ducks.empty():
+            return
+
+        ducky = self.pondhouse_ducks.get()
+
+        if self.active_rule.matches(ducky):
+            self.decrease_health()
+
+        self.destroy_ducky(ducky)
+
+    def grant_entry(self, ducky: _sprites.Ducky) -> None:
         """Generic method to grant entry. - gateway to the pond."""
-        if self.pondhouse_ducks:
-            duck = ducky or choice(self.pondhouse_ducks)
-            self.pondhouse_ducks.remove(duck)
-            if len(self.pond_ducks) >= constants.POND:
-                ducky_out = choice(self.pond_ducks.sprite_list)
-                seq = ducky_out.off_screen()
-                seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
-                self.animations.fire(ducky_out, seq)
-            self.pond_ducks.append(duck)
-            self.enter_pond(duck)
+        if len(self.pond_ducks) >= constants.POND:
+            ducky_out = choice(self.pond_ducks.sprite_list)
+            seq = ducky_out.off_screen()
+            seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
+            self.animations.fire(ducky_out, seq)
+        self.pond_ducks.append(ducky)
+        self.enter_pond(ducky)
 
     def enter_pond(self, duck: _sprites.Ducky) -> None:
         """Grant a ducky entry into the pond."""
         self.animations.fire(duck, duck.pond_seq)
+
+    def show_human_ducky(self, ducky: Optional[_sprites.Ducky]) -> None:
+        """Show the human version of the ducky in the teller. Remove it if None."""
+        print(f"DEBUG: showing human ducky {ducky}")
+        # TODO: actual code
+
+    def destroy_ducky(self, ducky: _sprites.Ducky) -> None:
+        """Trigger the destroy animation on the ducky currently inside the teller."""
+        print(f"DEBUG: destroying ducky {ducky}")
+        # TODO: actual code
+
+    def decrease_health(self) -> None:
+        """Decrease the player's health points."""
+        print("DEBUG: decreasing health")
+        # TODO: actual code
 
 
 class GameView(arcade.View):
@@ -181,7 +235,6 @@ class GameView(arcade.View):
         'a' to add a duck
         'p' to print the generated points_hint list
         'x' to clear the points
-        'g' grant random duck entry
         """
         if not self.debug:
             pass  # temporarily remove this block
@@ -192,13 +245,10 @@ class GameView(arcade.View):
             print(constants.POINTS_HINT)
         elif symbol == ord('x'):
             constants.POINTS_HINT.clear()
-        elif symbol == ord('g'):
-            if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
-                self.curtains.current_scene.grant_entry()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
-        constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
+        # constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
 
 def main() -> None:
