@@ -27,7 +27,6 @@ class Ducky(arcade.Sprite):
         self.equipment = ducky.equipment
         self.outfit = ducky.outfit
 
-        self.position = (0, 0)
         self.path_seq = self.sequence_gen(random=False)
         self.pondhouse_seq = self.sequence_gen(random=True, loop=True)
         self.pond_seq = self.sequence_gen(random=True, loop=True, pond=True)
