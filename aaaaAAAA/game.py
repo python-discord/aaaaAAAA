@@ -152,7 +152,8 @@ class GameView(arcade.View):
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
-        constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
+        if self.debug:
+            constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
 
 
 def main() -> None:
