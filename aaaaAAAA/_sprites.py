@@ -120,11 +120,7 @@ class Ducky(PydisSprite):
         if pos == constants.POINTS_HINT[-1]:
             return
         pos_index = constants.POINTS_HINT.index(pos)
-        pos2 = constants.POINTS_HINT[pos_index+1]
-        x2, y2 = pos2[0] * constants.SCREEN_WIDTH, pos[1] * constants.SCREEN_HEIGHT
-        if arcade.get_sprites_at_point((x2, y2), self.ducks):
-            pos2 = pos
-        return self.sequence_gen(shift=[pos, pos2])
+        return self.sequence_gen(shift=constants.POINTS_HINT[pos_index:pos_index+2])
 
 
 class Lily(PydisSprite):
