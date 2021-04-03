@@ -1,9 +1,13 @@
+import queue
 from enum import IntEnum
+from itertools import chain
 from random import choice
-from typing import Optional
+from typing import Callable, Optional
 
 import arcade
 from PIL import Image
+from PIL.ImageChops import blend
+from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
@@ -31,30 +35,48 @@ def load_scaled_texture(name: str, path: str, size: float) -> arcade.Texture:
 class AllowButton(UIImageButton):
     """A class representing the button to allow ducks into the pond."""
 
-    def __init__(self):
+    def __init__(self, callback: Callable):
         released = load_scaled_texture("allow_released", "assets/overworld/buttons/allow_button.png", 0.18)
         pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.callback = callback
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.735,
                          center_y=window.height * 0.085)
+
+    def on_press(self) -> None:
+        """Run the handler."""
+        super().on_press()
+        self.callback()
 
 
 class AnnihilateButton(UIImageButton):
     """A class representing the button to annihilate ducks."""
 
-    def __init__(self):
+    def __init__(self, callback: Callable):
         released = load_scaled_texture("annihilate_released", "assets/overworld/buttons/annihilate_button.png", 0.18)
         pressed = load_scaled_texture("annihilate_pressed",
                                       "assets/overworld/buttons/annihilate_button_depressed.png", 0.18)
         window = arcade.get_window()
+        self.callback = callback
         super().__init__(released, press_texture=pressed,
                          center_x=window.width * 0.575,
                          center_y=window.height * 0.12)
 
+    def on_press(self) -> None:
+        """Run the handler."""
+        super().on_press()
+        self.callback()
+
 
 class DuckScene(BaseScene):
     """Scene showing Ducks moving down the river to the pondhouse."""
+
+    # Background texture depending on the health level
+    overworld_background = [
+        arcade.load_texture(f"assets/overworld/overworld_{health_level}.png")
+        for health_level in ("deadly", "toxic", "disgusting", "decaying", "healthy")
+    ]
 
     def __init__(self, debug: Optional[bool] = False):
         self.debug = debug
@@ -65,7 +87,9 @@ class DuckScene(BaseScene):
         window = arcade.get_window()
         scale = window.width / constants.SCREEN_WIDTH
 
-        self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
+        self.health = 4
+        self.background = self.overworld_background[self.health]
+        self.overworld_texture_blend = 1.0
 
         self.pondhouse = arcade.Sprite("assets/overworld/pondhouse/pondhouse_cropped.png", scale=scale)
         self.pondhouse.position = (window.width * .66, window.height * .76)
@@ -77,17 +101,14 @@ class DuckScene(BaseScene):
         self.ducks = _sprites.Ducky.ducks
         self.path_queued_ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
-        self.pondhouse_ducks = arcade.SpriteList()
-        self.leader = _sprites.Ducky(0.07)
-        self.seq = self.leader.path_seq
-        for x, y in constants.FOLIAGE_POND:
-            pos = constants.SCREEN_WIDTH * x, constants.SCREEN_HEIGHT * y
-            lily = _sprites.Lily(scale=.075, position=pos)
-            self.events.hover(lily, lily.float_about)
+        self.pondhouse_ducks = queue.SimpleQueue()
 
         self.ui_manager = UIManager()
-        self.ui_manager.add_ui_element(AllowButton())
-        self.ui_manager.add_ui_element(AnnihilateButton())
+        self.ui_manager.add_ui_element(AllowButton(self.allow_ducky))
+        self.ui_manager.add_ui_element(AnnihilateButton(self.reject_ducky))
+
+        # TODO: actually load a rule here
+        self.active_rule = type("", (), {"matches": lambda ducky: True})
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -102,39 +123,37 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
+        print(duration)
         seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
+        if len(self.ducks) >= constants.DUCKS:
+            arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
         if not self.debug:
-            self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
-            arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS)  # replace with progress logic
+            arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS * 2)  # replace progress logic
 
     def draw(self) -> None:
         """Draw the background environment."""
-        if len(self.pondhouse_ducks) >= 20:
-            self.background = arcade.load_texture("assets/overworld/overworld_deadly_no_lilies.png")
-            for lily in self.lilies:
-                lily.change_texture(Colour.Black)
-            for duck in self.pond_ducks:
-                self.animations.kill(duck)
-                duck.deceased()
-        elif len(self.pondhouse_ducks) > 15:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Purple)
-            self.background = arcade.load_texture("assets/overworld/overworld_toxic_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 10:
-            self.background = arcade.load_texture("assets/overworld/overworld_disgusting_no_lilies.png")
-        elif len(self.pondhouse_ducks) > 5:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Yellow)
-            self.background = arcade.load_texture("assets/overworld/overworld_decaying_no_lilies.png")
+        # If we aren't fading anything, we just use the texture
+        if self.overworld_texture_blend == 1.0:
+            self.background = self.overworld_background[self.health]
         else:
-            for lily in self.lilies:
-                lily.change_texture(Colour.Green)
-            self.background = arcade.load_texture("assets/overworld/overworld_healthy_no_lilies.png")
+            texture = blend(
+                self.overworld_background[self.health].image,
+                self.overworld_background[self.health + 1].image,
+                1.0 - self.overworld_texture_blend
+            )
+            self.background = Texture(f"background-{self.health}-{self.overworld_texture_blend}", texture)
+
+            self.overworld_texture_blend += .01
+
+            # I hate floating points
+            if self.overworld_texture_blend > 1.0:
+                self.overworld_texture_blend = 1.0
+
         arcade.start_render()
         arcade.draw_lrwh_rectangle_textured(
             0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
@@ -145,6 +164,8 @@ class DuckScene(BaseScene):
 
     def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
         """Move the ducky into the path_queue spritelist."""
+        print(self.ducks.sprite_list)
+        return  # Something needs fixed here
         self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
@@ -152,21 +173,44 @@ class DuckScene(BaseScene):
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
         self.path_queued_ducks.remove(ducky)
-        self.pondhouse_ducks.append(ducky)
+        if self.pondhouse_ducks.empty():
+            self.show_human_ducky(ducky)
+        self.pondhouse_ducks.put(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
-    def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
+    def allow_ducky(self) -> None:
+        """Allow a ducky into the pond."""
+        if self.pondhouse_ducks.empty():
+            return
+
+        ducky = self.pondhouse_ducks.get()
+
+        if not self.active_rule.matches(ducky):
+            self.decrease_health()
+
+        self.grant_entry(ducky)
+
+    def reject_ducky(self) -> None:
+        """Annihilate the ducky."""
+        if self.pondhouse_ducks.empty():
+            return
+
+        ducky = self.pondhouse_ducks.get()
+
+        if self.active_rule.matches(ducky):
+            self.decrease_health()
+
+        self.destroy_ducky(ducky)
+
+    def grant_entry(self, ducky: _sprites.Ducky) -> None:
         """Generic method to grant entry. - gateway to the pond."""
-        if self.pondhouse_ducks:
-            duck = ducky or choice(self.pondhouse_ducks)
-            self.pondhouse_ducks.remove(duck)
-            if len(self.pond_ducks) >= constants.POND:
-                ducky_out = choice(self.pond_ducks.sprite_list)
-                seq = ducky_out.off_screen()
-                seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
-                self.animations.fire(ducky_out, seq)
-            self.pond_ducks.append(duck)
-            self.enter_pond(duck)
+        if len(self.pond_ducks) >= constants.POND:
+            ducky_out = choice(self.pond_ducks.sprite_list)
+            seq = ducky_out.off_screen()
+            seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
+            self.animations.fire(ducky_out, seq)
+        self.pond_ducks.append(ducky)
+        self.enter_pond(ducky)
 
     def enter_pond(self, duck: _sprites.Ducky) -> None:
         """Grant a ducky entry into the pond."""
@@ -180,6 +224,40 @@ class DuckScene(BaseScene):
                 self.animations.fire(ducky, move)
             else:
                 self.enter_pondhouse(ducky)
+
+    def show_human_ducky(self, ducky: Optional[_sprites.Ducky]) -> None:
+        """Show the human version of the ducky in the teller. Remove it if None."""
+        print(f"DEBUG: showing human ducky {ducky}")
+        # TODO: actual code
+
+    def destroy_ducky(self, ducky: _sprites.Ducky) -> None:
+        """Trigger the destroy animation on the ducky currently inside the teller."""
+        print(f"DEBUG: destroying ducky {ducky}")
+        # TODO: actual code
+
+    def decrease_health(self) -> None:
+        """Decrease the player's health points."""
+        print("DEBUG: decreasing health")
+        self.health -= 1
+        self.overworld_texture_blend = 0.0
+
+        if self.health == 0:
+            self.game_over()
+
+    def game_over(self) -> None:
+        """End the game."""
+        # Cancel animations
+        self.animations.animations.clear()
+        # Stop new duckies
+        arcade.unschedule(self.add_a_ducky)
+        # Clear the waiting line
+        while not self.pondhouse_ducks.empty():
+            self.pondhouse_ducks.get()
+        # Remove the ducky from the teller
+        self.show_human_ducky(None)
+        # Put the duckies upside down
+        for ducky in chain(self.pond_ducks, self.ducks):
+            ducky.deceased()
 
 
 class GameView(arcade.View):
@@ -202,7 +280,7 @@ class GameView(arcade.View):
         'a' to add a duck
         'p' to print the generated points_hint list
         'x' to clear the points
-        'g' grant random duck entry
+        'd' to decrease health
         """
         if not self.debug:
             pass  # temporarily remove this block
@@ -213,9 +291,9 @@ class GameView(arcade.View):
             print(constants.POINTS_HINT)
         elif symbol == ord('x'):
             constants.POINTS_HINT.clear()
-        elif symbol == ord('g'):
+        elif symbol == ord('d'):
             if self.curtains.current_scene == self.curtains.scenes['swimming_scene']:
-                self.curtains.current_scene.grant_entry()
+                self.curtains.current_scene.decrease_health()
 
     def on_mouse_release(self, x: float, y: float, button: int, modifiers: int) -> None:
         """Add clicked point to points_hint as % of width/height."""
