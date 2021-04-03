@@ -117,7 +117,6 @@ class Ducky(PydisSprite):
         if pos == constants.POINTS_HINT[-1]:
             return
         pos_index = constants.POINTS_HINT.index(pos)
-        print(pos_index)
         pos2 = constants.POINTS_HINT[pos_index+1]
         return self.sequence_gen(shift=[pos, pos2])
 
