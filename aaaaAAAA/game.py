@@ -10,7 +10,7 @@ from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
-from aaaaAAAA import _sprites, constants
+from aaaaAAAA import _sprites, constants, menu
 
 TEXT_RGB = (70, 89, 134)
 FONT = "assets/fonts/LuckiestGuy-Regular.ttf"
@@ -27,6 +27,7 @@ RULES = {
 
 class Colour(IntEnum):
     """Sprite colors."""
+
     GREEN = 0
     YELLOW = 1
     PURPLE = 2
@@ -35,6 +36,7 @@ class Colour(IntEnum):
 
 class Toxicity(IntEnum):
     """Toxicity levels for the overworld."""
+
     HEALTHY = 0
     DECAYING = 1
     DISGUSTING = 2
@@ -276,7 +278,6 @@ class DuckScene(BaseScene):
 
     def allow(self) -> None:
         """Allow the current duck into the pond."""
-        self.end_game()
         if len(self.ducks) == 0:
             return
         ducky = self.ducks.pop(0)
@@ -284,7 +285,7 @@ class DuckScene(BaseScene):
         self.pondhouse_ducks.append(ducky)
         self.grant_entry(ducky)
 
-        if True or RULES[self.rule](ducky):
+        if RULES[self.rule](ducky):
             self.award_point()
         else:
             self.retract_point()
@@ -299,7 +300,7 @@ class DuckScene(BaseScene):
 
         self.explode(ducky)
 
-        if False and not RULES[self.rule](ducky):
+        if not RULES[self.rule](ducky):
             self.award_point()
         else:
             self.retract_point()
@@ -379,10 +380,13 @@ class DuckScene(BaseScene):
 
     def end_game(self) -> None:
         """Immediately end the round."""
-        # self.ui_manager.unregister_handlers()
-        # self.curtains
-        # arcade.get_window().show_view(GameOverView(self.passed, self.failed, self.start))
-        ...
+        # Cleanup
+        self.ui_manager.unregister_handlers()
+        self.curtains.scenes.pop("swimming_scene")
+
+        # Switch over to game over scene
+        self.curtains.add_scene("game_over_scene", GameOverView(self.passed, self.failed, self.start))
+        self.curtains.set_scene("game_over_scene")
 
     def progress(self, dt: float) -> None:
         """Progress the ducks on the path."""
@@ -394,44 +398,77 @@ class DuckScene(BaseScene):
                 self.enter_pondhouse(ducky)
 
 
-class GameOverView(arcade.View):
+class QuitButton(UIImageButton):
+    """A class representing the button to quit the game."""
+
+    def __init__(self):
+        released = load_scaled_texture("exit", "assets/overworld/buttons/exit_button.png", 0.16)
+        window = arcade.get_window()
+        super().__init__(released, center_x=window.width * 0.735, center_y=window.height * 0.085)
+
+    def on_release(self) -> None:
+        """Call the allow action."""
+        super().on_click()
+        arcade.close_window()
+
+
+class MenuButton(UIImageButton):
+    """A class representing the button to return to main menu."""
+
+    def __init__(self, scene: "GameOverView"):
+        released = load_scaled_texture("menu_released", "assets/overworld/buttons/menu_button.png", 0.18)
+        window = arcade.get_window()
+        self.scene = scene
+        super().__init__(released, center_x=window.width * 0.575, center_y=window.height * 0.12)
+
+    def on_release(self) -> None:
+        """Call the allow action."""
+        self.scene.curtains.scenes.pop("game_over_scene")
+        self.scene.ui_manager.unregister_handlers()
+
+        self.scene.curtains.add_scene("main_menu", menu.MenuView())
+        self.scene.curtains.set_scene("main_menu")
+
+
+class GameOverView(BaseScene):
     """View for the game over screen."""
 
     def __init__(self, passed: int, failed: int, start_time: datetime.datetime):
         super().__init__()
         self.passed = passed
         self.failed = failed
-        self.start = start_time
+        self.total_time = datetime.datetime.now() - start_time
 
     def setup(self) -> None:
-        """Setup the game over screen."""
-        self.background = arcade.load_texture("assets/title-screen/title_screen_no_buttons.png")
+        """Setup game over view."""
+        self.background = arcade.load_texture("assets/overworld/overworld_deadly.png")
 
-    def on_draw(self) -> None:
+        self.ui_manager = UIManager()
+        self.ui_manager.add_ui_element(MenuButton(self))
+        self.ui_manager.add_ui_element(QuitButton())
+
+    def draw(self) -> None:
         """Draw the game over screen."""
-        # Draw background
         arcade.start_render()
-        self.background.draw_sized(
-            self.window.width // 2,
-            self.window.height // 2,
-            self.window.width,
-            self.window.height
+        arcade.draw_lrwh_rectangle_textured(
+            0, 0, constants.SCREEN_WIDTH, constants.SCREEN_HEIGHT, self.background
         )
 
-        # Draw play time
-        total = datetime.datetime.now() - self.start
-        arcade.draw_text(
-            f"Total Play Time: {total.seconds}s",
-            constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2 - 50, TEXT_RGB, 75, font_name=FONT,
-            align="center", anchor_x="center", anchor_y="bottom"
-        )
+        message = f"""
+        Total Play Time: {self.total_time.seconds}s
+        Total Ducks: {self.passed + self.failed}
 
-        # Draw score breakdown
-        arcade.draw_text(
-            f"Correct: {self.passed} | Mistakes: {self.failed}",
-            constants.SCREEN_WIDTH / 2, constants.SCREEN_HEIGHT / 2, TEXT_RGB, 75, font_name=FONT,
+        Correct: {self.passed}
+        Mistakes: {self.failed}
+        """
+
+        text = arcade.draw_text(
+            message,
+            200, 160, TEXT_RGB, 75, font_name=FONT,
             align="center", anchor_x="center", anchor_y="center"
         )
+
+        text.scale = 0.45
 
 
 class GameView(arcade.View):
@@ -477,6 +514,7 @@ class GameView(arcade.View):
         """Add clicked point to points_hint as % of width/height."""
         if self.debug:
             constants.POINTS_HINT.append((round(x/self.window.width, 3), round(y/self.window.height, 3)))
+        print(x, y)
 
 
 def main() -> None:
