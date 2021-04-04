@@ -1,6 +1,7 @@
 import datetime
 import random
 from enum import IntEnum
+from itertools import chain
 from random import choice
 from typing import Optional
 
@@ -195,15 +196,13 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
-        seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
+        seq.add_callback(duration-1, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
         if not self.debug:
-            self.animations.fire(self.leader, self.seq)
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
-            arcade.schedule(self.progress, len(constants.POINTS_HINT)*10/constants.DUCKS)  # replace with progress logic
 
     def alter_toxicity(self, change_by: int) -> None:
         """Handle toxicity-related changes."""
@@ -278,9 +277,9 @@ class DuckScene(BaseScene):
 
     def allow(self) -> None:
         """Allow the current duck into the pond."""
-        if len(self.ducks) == 0:
+        if len(self.path_queued_ducks) == 0:
             return
-        ducky = self.ducks.pop(0)
+        ducky = self.path_queued_ducks.pop(0)
 
         self.pondhouse_ducks.append(ducky)
         self.grant_entry(ducky)
@@ -291,12 +290,13 @@ class DuckScene(BaseScene):
             self.retract_point()
 
         self.update_rule()
+        self.progress()
 
     def deny(self) -> None:
         """Deny the current duck from the pond."""
-        if len(self.ducks) == 0:
+        if len(self.path_queued_ducks) == 0:
             return
-        ducky = self.ducks.pop(0)
+        ducky = self.path_queued_ducks.pop(0)
 
         self.explode(ducky)
 
@@ -306,6 +306,7 @@ class DuckScene(BaseScene):
             self.retract_point()
 
         self.update_rule()
+        self.progress()
 
     def update_rule(self) -> None:
         """Update the game rule if enough ducks have been proccessed."""
@@ -348,16 +349,21 @@ class DuckScene(BaseScene):
 
     def explode(self, ducky: arcade.Sprite) -> None:
         """Blow up a denied duck."""
-        ...
+        # Super impressive explosions
+        ducky.width = 0
 
     def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
         """Move the ducky into the path_queue spritelist."""
         # self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
+        self.progress()
 
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
+        self.path_queued_ducks.remove(ducky)
+        if len(self.pondhouse_ducks) == 0:
+            self.show_human_ducky(ducky)
         self.pondhouse_ducks.append(ducky)
         self.animations.fire(ducky, ducky.pondhouse_seq)
 
@@ -388,7 +394,7 @@ class DuckScene(BaseScene):
         self.curtains.add_scene("game_over_scene", GameOverView(self.passed, self.failed, self.start))
         self.curtains.set_scene("game_over_scene")
 
-    def progress(self, dt: float) -> None:
+    def progress(self, dt: Optional[float] = 0) -> None:
         """Progress the ducks on the path."""
         for ducky in self.path_queued_ducks:
             move = ducky.next_move()
@@ -396,6 +402,42 @@ class DuckScene(BaseScene):
                 self.animations.fire(ducky, move)
             else:
                 self.enter_pondhouse(ducky)
+
+    def show_human_ducky(self, ducky: Optional[_sprites.Ducky]) -> None:
+        """Show the human version of the ducky in the teller. Remove it if None."""
+        print(f"DEBUG: showing human ducky {ducky}")
+        # TODO: actual code
+
+    def destroy_ducky(self, ducky: _sprites.Ducky) -> None:
+        """Trigger the destroy animation on the ducky currently inside the teller."""
+        print(f"DEBUG: destroying ducky {ducky}")
+        # TODO: actual code
+
+    def decrease_health(self) -> None:
+        """Decrease the player's health points."""
+        print("DEBUG: decreasing health")
+        self.health -= 1
+        self.overworld_texture_blend = 0.0
+        for lily in self.lilies:
+            lily.change_texture(self.lily_color[self.health])
+
+        if self.health == 0:
+            self.game_over()
+
+    def game_over(self) -> None:
+        """End the game."""
+        # Cancel animations
+        self.animations.animations.clear()
+        # Stop new duckies
+        arcade.unschedule(self.add_a_ducky)
+        # Clear the waiting line
+        while not self.pondhouse_ducks.empty():
+            self.pondhouse_ducks.get()
+        # Remove the ducky from the teller
+        self.show_human_ducky(None)
+        # Put the duckies upside down
+        for ducky in chain(self.pond_ducks, self.ducks):
+            ducky.deceased()
 
 
 class QuitButton(UIImageButton):
