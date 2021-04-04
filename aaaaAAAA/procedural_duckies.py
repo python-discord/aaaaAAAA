@@ -7,7 +7,7 @@ from typing import Optional
 
 from PIL import Image, ImageChops
 
-ProceduralDucky = namedtuple("ProceduralDucky", "image hat equipment outfit")
+ProceduralDucky = namedtuple("ProceduralDucky", "image colors hat equipment outfit")
 DuckyColors = namedtuple("DuckyColors", "eye_main eye_wing wing body beak")
 Color = tuple[int, int, int]
 
@@ -75,7 +75,7 @@ class ProceduralDuckyGenerator:
             self.apply_layer(hat_type[1])
             self.hat = hat_type[0]
 
-        return ProceduralDucky(self.output, self.hat, self.equipment, self.outfit)
+        return ProceduralDucky(self.output, self.colors, self.hat, self.equipment, self.outfit)
 
     def apply_layer(self, layer: Image.Image, recolor: Optional[Color] = None) -> None:
         """Add the given layer on top of the ducky. Can be recolored with the recolor argument."""
