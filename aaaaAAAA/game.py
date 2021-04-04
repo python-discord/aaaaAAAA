@@ -131,8 +131,6 @@ class DuckScene(BaseScene):
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
         seq.add_callback(duration-1, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
-        if len(self.ducks) >= constants.DUCKS:
-            arcade.unschedule(self.add_a_ducky)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
