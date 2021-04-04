@@ -34,10 +34,12 @@ class Ducky(PydisSprite):
 
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
-        ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
 
         super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
-        self.texture = Texture(ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None")
+        self.texture = Texture(
+            self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"
+        )
 
         self.hat = ducky.hat
         self.equipment = ducky.equipment
@@ -113,6 +115,10 @@ class Ducky(PydisSprite):
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
 
+    def __repr__(self) -> str:
+        """Return debug representation."""
+        return f"<{self.__class__.__name__} {self.ducky_name=}>"
+
     def next_move(self) -> Union[Sequence, None]:
         """Create a sequence to progress the duck to the next point."""
         x, y = self.center_x / constants.SCREEN_WIDTH, self.center_y / constants.SCREEN_HEIGHT
@@ -120,11 +126,7 @@ class Ducky(PydisSprite):
         if pos == constants.POINTS_HINT[-1]:
             return
         pos_index = constants.POINTS_HINT.index(pos)
-        pos2 = constants.POINTS_HINT[pos_index+1]
-        x2, y2 = pos2[0] * constants.SCREEN_WIDTH, pos[1] * constants.SCREEN_HEIGHT
-        if arcade.get_sprites_at_point((x2, y2), self.ducks):
-            pos2 = pos
-        return self.sequence_gen(shift=[pos, pos2])
+        return self.sequence_gen(shift=constants.POINTS_HINT[pos_index:pos_index+2])
 
 
 class Lily(PydisSprite):
