@@ -138,7 +138,7 @@ class Lily(PydisSprite):
         super().__init__(scale=scale, *args, **kwargs)
         self.lily = randint(1, 4)
         self.position = position
-        paths = [f"assets/foliage/lillies/png/Lily {self.lily} - {colour}-512.png"
+        paths = [f"assets/foliage/lillies/png/Lily {self.lily} - {colour}.png"
                  for colour in ('Green', 'Yellow', 'Purple', 'Black')]
         for path in paths:
             self.append_texture(arcade.load_texture(path, hit_box_algorithm="None"))
