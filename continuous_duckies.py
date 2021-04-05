@@ -1,7 +1,7 @@
 #! /bin/env python
 from PIL import Image
 
-from aaaaAAAA.procedural_duckies import DUCKY_SIZE, make_ducky
+from aaaaAAAA.ducky_generation.procedural_duckies import DUCKY_SIZE, make_ducky
 
 width, height = DUCKY_SIZE
 nx, ny = 8, 5
