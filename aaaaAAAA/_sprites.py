@@ -8,7 +8,7 @@ from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 
 from aaaaAAAA import constants
-from aaaaAAAA.procedural_duckies import make_ducky
+from aaaaAAAA.ducky_generation.procedural_duckies import make_ducky
 
 DUCKY_SPEED = 240
 

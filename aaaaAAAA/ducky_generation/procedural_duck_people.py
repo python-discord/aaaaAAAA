@@ -6,7 +6,8 @@ from pathlib import Path
 from typing import Optional
 
 from PIL import Image, ImageChops
-from procedural_duckies import ProceduralDucky, make_ducky
+
+from aaaaAAAA.ducky_generation.procedural_duckies import ProceduralDucky, make_ducky
 
 ManDucky = namedtuple("ManDucky", "image hat equipment outfit")
 DressColors = namedtuple("DressColors", "shirt pants")
