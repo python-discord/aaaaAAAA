@@ -123,6 +123,7 @@ class MenuScene(BaseScene):
         x_coor = constants.SCREEN_WIDTH // 4.2  # Empirically chosen to be centered under the top left text.
 
         for i, (name, button) in enumerate(buttons.items()):
+            print('added')
             self.ui_manager.add_ui_element(
                 button(name, center_x=x_coor, center_y=constants.SCREEN_HEIGHT * 2 // 3 - i * 75)
             )
@@ -145,7 +146,6 @@ class MenuScene(BaseScene):
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Called when this view is shown."""
-        self.setup()
 
     def leave_scene(self, next_scene: BaseScene) -> None:
         """Called when this view is not shown anymore."""
