@@ -3,8 +3,10 @@ from typing import Optional
 import arcade
 from arcade.gui import UIGhostFlatButton, UIManager
 from arcade.gui.ui_style import UIStyle
+from arcade_curtains import BaseScene, Curtains
 
-from aaaaAAAA.game import GameView
+from aaaaAAAA import constants
+from aaaaAAAA.game import DuckScene
 
 
 # Classes
@@ -79,8 +81,7 @@ class GameButton(MenuButton):
         """
         super().on_click()
 
-        game_view = GameView()
-        arcade.get_window().show_view(game_view)
+        arcade.get_window().menu.curtains.set_scene('swimming_scene')
 
 
 class ExitButton(MenuButton):
@@ -99,20 +100,19 @@ class ExitButton(MenuButton):
         arcade.close_window()
 
 
-class MenuView(arcade.View):
+class MenuScene(BaseScene):
     """Main menu view."""
 
     background_music = arcade.load_sound("assets/audio/music/Title Screen.mp3")
 
     def __init__(self):
         """Initialize the view."""
-        super().__init__()
-
         arcade.set_background_color(arcade.color.WHITE)
         self.background: arcade.Texture = None
         self.ui_manager = MenuUIManager()
 
         self.background_player = None
+        super().__init__()
 
     def setup(self) -> None:
         """Sets the background and the buttons."""
@@ -120,16 +120,16 @@ class MenuView(arcade.View):
         self.ui_manager.purge_ui_elements()
 
         buttons = {"NEW GAME": GameButton, "HIGH SCORES": MenuButton, "SETTINGS": MenuButton, "EXIT GAME": ExitButton}
-        x_coor = self.window.width // 4.2  # Empirically chosen to be centered under the top left text.
+        x_coor = constants.SCREEN_WIDTH // 4.2  # Empirically chosen to be centered under the top left text.
 
         for i, (name, button) in enumerate(buttons.items()):
             self.ui_manager.add_ui_element(
-                button(name, center_x=x_coor, center_y=self.window.height * 2 // 3 - i * 75)
+                button(name, center_x=x_coor, center_y=constants.SCREEN_HEIGHT * 2 // 3 - i * 75)
             )
 
         self.background_player = arcade.play_sound(self.background_music)
 
-    def on_draw(self) -> None:
+    def draw(self) -> None:
         """
         Called when this view should draw.
 
@@ -137,18 +137,30 @@ class MenuView(arcade.View):
         """
         arcade.start_render()
         self.background.draw_sized(
-            self.window.width // 2,
-            self.window.height // 2,
-            self.window.width,
-            self.window.height
+            constants.SCREEN_WIDTH // 2,
+            constants.SCREEN_HEIGHT // 2,
+            constants.SCREEN_WIDTH,
+            constants.SCREEN_HEIGHT
         )
 
-    def on_show_view(self) -> None:
+    def enter_scene(self, previous_scene: BaseScene) -> None:
         """Called when this view is shown."""
         self.setup()
 
-    def on_hide_view(self) -> None:
+    def leave_scene(self, next_scene: BaseScene) -> None:
         """Called when this view is not shown anymore."""
         self.ui_manager.unregister_handlers()
         if self.background_player and self.background_player.playing:
             arcade.stop_sound(self.background_player)
+
+
+class MenuView(arcade.View):
+    """Main application class."""
+
+    def __init__(self):
+        super().__init__()
+        arcade.set_background_color(arcade.color.WARM_BLACK)
+        self.curtains = Curtains(self)
+        self.curtains.add_scene('main_menu', MenuScene())
+        self.curtains.add_scene('swimming_scene', DuckScene())
+        self.curtains.set_scene('main_menu')

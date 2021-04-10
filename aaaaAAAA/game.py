@@ -11,7 +11,7 @@ from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
-from aaaaAAAA import _sprites, constants, menu
+from aaaaAAAA import _sprites, constants
 
 TEXT_RGB = (70, 89, 134)
 FONT = "assets/fonts/LuckiestGuy-Regular.ttf"
@@ -170,8 +170,6 @@ class DuckScene(BaseScene):
             self.events.hover(lily, lily.float_about)
 
         self.ui_manager = UIManager()
-        self.ui_manager.add_ui_element(AllowButton(self))
-        self.ui_manager.add_ui_element(AnnihilateButton(self))
 
         self.rule = random.choice(list(RULES.keys()))
         self.current_duck = 0
@@ -201,8 +199,14 @@ class DuckScene(BaseScene):
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
+        self.ui_manager.add_ui_element(AllowButton(self))
+        self.ui_manager.add_ui_element(AnnihilateButton(self))
         if not self.debug:
             arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
+
+    def leave_scene(self, next_scene: BaseScene) -> None:
+        """Called when leaving the scene."""
+        self.ui_manager.unregister_handlers()
 
     def alter_toxicity(self, change_by: int) -> None:
         """Handle toxicity-related changes."""
@@ -459,16 +463,17 @@ class MenuButton(UIImageButton):
 
     def __init__(self, scene: "GameOverView"):
         released = load_scaled_texture("menu_released", "assets/overworld/buttons/menu_button.png", 0.18)
+        pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
+        released = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
         window = arcade.get_window()
         self.scene = scene
-        super().__init__(released, center_x=window.width * 0.575, center_y=window.height * 0.12)
+        super().__init__(released, press_texture=pressed, center_x=window.width * 0.575, center_y=window.height * 0.12)
 
     def on_release(self) -> None:
         """Call the allow action."""
         self.scene.curtains.scenes.pop("game_over_scene")
         self.scene.ui_manager.unregister_handlers()
 
-        self.scene.curtains.add_scene("main_menu", menu.MenuView())
         self.scene.curtains.set_scene("main_menu")
 
 
@@ -480,12 +485,14 @@ class GameOverView(BaseScene):
         self.passed = passed
         self.failed = failed
         self.total_time = datetime.datetime.now() - start_time
+        self.ui_manager = UIManager()
 
     def setup(self) -> None:
         """Setup game over view."""
         self.background = arcade.load_texture("assets/overworld/overworld_deadly.png")
 
-        self.ui_manager = UIManager()
+    def enter_scene(self, previous_scene: BaseScene) -> None:
+        """Called when entering the scene."""
         self.ui_manager.add_ui_element(MenuButton(self))
         self.ui_manager.add_ui_element(QuitButton())
 
