@@ -82,6 +82,11 @@ class GameButton(MenuButton):
         super().on_click()
 
         arcade.get_window().menu.curtains.set_scene('swimming_scene')
+        ''' Doesn't behave as expected
+        curtains = arcade.get_window().menu.curtains
+        curtains.add_scene('swimming_scene', DuckScene())
+        curtains.set_scene('swimming_scene')
+        '''
 
 
 class ExitButton(MenuButton):
@@ -160,6 +165,5 @@ class MenuView(arcade.View):
         super().__init__()
         arcade.set_background_color(arcade.color.WARM_BLACK)
         self.curtains = Curtains(self)
-        self.curtains.add_scene('main_menu', MenuScene())
-        self.curtains.add_scene('swimming_scene', DuckScene())
+        self.curtains.add_scenes({'main_menu': MenuScene(), 'swimming_scene': DuckScene()})
         self.curtains.set_scene('main_menu')
