@@ -123,7 +123,6 @@ class MenuScene(BaseScene):
         x_coor = constants.SCREEN_WIDTH // 4.2  # Empirically chosen to be centered under the top left text.
 
         for i, (name, button) in enumerate(buttons.items()):
-            print('added')
             self.ui_manager.add_ui_element(
                 button(name, center_x=x_coor, center_y=constants.SCREEN_HEIGHT * 2 // 3 - i * 75)
             )
