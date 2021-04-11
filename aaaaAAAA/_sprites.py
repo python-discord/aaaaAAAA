@@ -8,6 +8,7 @@ from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 
 from aaaaAAAA import constants
+from aaaaAAAA.ducky_generation.procedural_duck_people import make_manducky
 from aaaaAAAA.ducky_generation.procedural_duckies import make_ducky
 
 DUCKY_SPEED = 240
@@ -35,11 +36,15 @@ class Ducky(PydisSprite):
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
         self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        manducky = make_manducky(ducky)
+        self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        self.man_ducky_name = f"{manducky.hat}-{manducky.equipment}-{manducky.outfit}"
 
         super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
-        self.texture = Texture(
-            self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"
-        )
+        for name, texture in ((self.ducky_name, ducky), (self.man_ducky_name, manducky)):
+            self.append_texture(
+                Texture(name, texture.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"))
+        self.texture = self.textures[0]
 
         self.hat = ducky.hat
         self.equipment = ducky.equipment
@@ -114,6 +119,23 @@ class Ducky(PydisSprite):
         seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
+
+    def manify(self) -> Sequence:
+        """Return a sequence to move the ducky to the pondhouse viewer."""
+        x1, y1 = self.position
+        x3, y3 = constants.SCREEN_WIDTH * .2, constants.SCREEN_HEIGHT * .3
+        x2, y2 = x3 + ((x1 - x3) / 2), y3 + ((y1 - y3) / 2)
+        angle = degrees(sin((x2 - x1) / max((y2 - y1), 1)))
+        seq = Sequence()
+        seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
+                          (2, KeyFrame(position=(x2, y2), width=self.width*3, height=self.height*3, angle=angle)),
+                          (3, KeyFrame(position=(x3, y3), width=self.width*7, height=self.height*7, angle=0)))
+        seq.add_callback(1.5, self.show_manduck)
+        return seq
+
+    def show_manduck(self) -> None:
+        """Switch the texture to the manduck."""
+        self.texture = self.textures[1]
 
     def __repr__(self) -> str:
         """Return debug representation."""

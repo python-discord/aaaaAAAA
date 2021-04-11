@@ -367,9 +367,10 @@ class DuckScene(BaseScene):
         """Duckies that are circling outside the pondhouse waiting to be processed."""
         self.path_queued_ducks.remove(ducky)
         if len(self.pondhouse_ducks) == 0:
-            self.show_human_ducky(ducky)
-        self.pondhouse_ducks.append(ducky)
-        self.animations.fire(ducky, ducky.pondhouse_seq)
+            self.animations.fire(ducky, ducky.manify())
+        else:
+            self.pondhouse_ducks.append(ducky)
+            self.animations.fire(ducky, ducky.pondhouse_seq)
 
     def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
         """Generic method to grant entry. - gateway to the pond."""
@@ -406,16 +407,6 @@ class DuckScene(BaseScene):
                 self.animations.fire(ducky, move)
             else:
                 self.enter_pondhouse(ducky)
-
-    def show_human_ducky(self, ducky: Optional[_sprites.Ducky]) -> None:
-        """Show the human version of the ducky in the teller. Remove it if None."""
-        print(f"DEBUG: showing human ducky {ducky}")
-        # TODO: actual code
-
-    def destroy_ducky(self, ducky: _sprites.Ducky) -> None:
-        """Trigger the destroy animation on the ducky currently inside the teller."""
-        print(f"DEBUG: destroying ducky {ducky}")
-        # TODO: actual code
 
     def decrease_health(self) -> None:
         """Decrease the player's health points."""
