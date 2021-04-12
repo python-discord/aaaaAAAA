@@ -8,7 +8,8 @@ from arcade.texture import Texture
 from arcade_curtains import KeyFrame, Sequence
 
 from aaaaAAAA import constants
-from aaaaAAAA.procedural_duckies import make_ducky
+from aaaaAAAA.ducky_generation.procedural_duck_people import make_manducky
+from aaaaAAAA.ducky_generation.procedural_duckies import make_ducky
 
 DUCKY_SPEED = 240
 
@@ -35,11 +36,15 @@ class Ducky(PydisSprite):
     def __init__(self, scale: float = 1, *args, **kwargs):
         ducky = make_ducky()
         self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        manducky = make_manducky(ducky)
+        self.ducky_name = f"{ducky.hat}-{ducky.equipment}-{ducky.outfit}"
+        self.man_ducky_name = f"{manducky.hat}-{manducky.equipment}-{manducky.outfit}"
 
         super().__init__(scale=scale, flipped_horizontally=True, *args, **kwargs)
-        self.texture = Texture(
-            self.ducky_name, ducky.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"
-        )
+        for name, texture in ((self.ducky_name, ducky), (self.man_ducky_name, manducky)):
+            self.append_texture(
+                Texture(name, texture.image.transpose(PIL.Image.FLIP_LEFT_RIGHT), hit_box_algorithm="None"))
+        self.texture = self.textures[0]
 
         self.hat = ducky.hat
         self.equipment = ducky.equipment
@@ -115,6 +120,41 @@ class Ducky(PydisSprite):
                           (3, KeyFrame(position=(x2, y2), angle=angle)))
         return seq
 
+    def manify(self) -> Sequence:
+        """Return a sequence to move the ducky to the pondhouse viewer."""
+        x1, y1 = 0, constants.SCREEN_HEIGHT * .3
+        x2, y2 = constants.SCREEN_WIDTH * .175, constants.SCREEN_HEIGHT * .3
+
+        seq = Sequence()
+        seq.add_keyframes((0, KeyFrame(position=(x1, y1), alpha=0, scale=.21, angle=0)),
+                          (.5, KeyFrame(position=(x1 + 30, y1 + 7), scale=.35, angle=0)))
+        for t, pos in enumerate(range(int(x1), int(x2), int((x2-x1)/3)), start=2):
+            if t % 2:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1 + 7)))
+            else:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1)))
+            seq.add_keyframe((t+1)/2, KeyFrame(position=(x2, y2), angle=0))
+
+        return seq
+
+    def duckify(self) -> Sequence:
+        """Return a sequence to move the ducky to the pondhouse viewer."""
+        x1, y1 = self.position
+        x2, y2 = .3 * constants.SCREEN_WIDTH, .3 * constants.SCREEN_HEIGHT
+
+        seq = Sequence()
+        for t, pos in enumerate(range(int(x1), int(x2), int((x2-x1)/3))):
+            if t % 2:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1 + 7)))
+            else:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1)))
+            seq.add_keyframe((t+1)/2, KeyFrame(position=(x2, y2), angle=0))
+        seq.add_keyframes(
+            ((t+2)/2, KeyFrame(position=(x2, y2), scale=.21)),
+            ((t+3)/2, KeyFrame(position=(x2, y2), scale=.07)))
+
+        return seq
+
     def __repr__(self) -> str:
         """Return debug representation."""
         return f"<{self.__class__.__name__} {self.ducky_name=}>"
@@ -138,7 +178,7 @@ class Lily(PydisSprite):
         super().__init__(scale=scale, *args, **kwargs)
         self.lily = randint(1, 4)
         self.position = position
-        paths = [f"assets/foliage/lillies/png/Lily {self.lily} - {colour}-512.png"
+        paths = [f"assets/foliage/lillies/png/Lily {self.lily} - {colour}.png"
                  for colour in ('Green', 'Yellow', 'Purple', 'Black')]
         for path in paths:
             self.append_texture(arcade.load_texture(path, hit_box_algorithm="None"))

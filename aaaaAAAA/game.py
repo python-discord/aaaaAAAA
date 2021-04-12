@@ -11,7 +11,7 @@ from arcade import Texture
 from arcade.gui import UIImageButton, UIManager
 from arcade_curtains import BaseScene, Curtains
 
-from aaaaAAAA import _sprites, constants, menu
+from aaaaAAAA import _sprites, constants
 
 TEXT_RGB = (70, 89, 134)
 FONT = "assets/fonts/LuckiestGuy-Regular.ttf"
@@ -160,6 +160,7 @@ class DuckScene(BaseScene):
         self.ducks = _sprites.Ducky.ducks
         self.path_queued_ducks = arcade.SpriteList()
         self.pond_ducks = arcade.SpriteList()
+        self.pondhouse_duck = None
         self.pondhouse_ducks = arcade.SpriteList()
         self.leader = _sprites.Ducky(0.07)
         self.seq = self.leader.path_seq
@@ -170,18 +171,14 @@ class DuckScene(BaseScene):
             self.events.hover(lily, lily.float_about)
 
         self.ui_manager = UIManager()
-        self.ui_manager.add_ui_element(AllowButton(self))
-        self.ui_manager.add_ui_element(AnnihilateButton(self))
 
         self.rule = random.choice(list(RULES.keys()))
         self.current_duck = 0
 
         self.streak = 0
-        self.game_end = datetime.datetime.now() + datetime.timedelta(minutes=2)
 
         self.passed = 0
         self.failed = 0
-        self.start = datetime.datetime.now()
 
     def add_a_ducky(self, dt: Optional[float] = None) -> None:
         """Add a ducky to the scene, register some events and start animating."""
@@ -196,20 +193,31 @@ class DuckScene(BaseScene):
         self.events.out(ducky, ducky.shrink)
         seq = ducky.path_seq
         duration = len(constants.POINTS_HINT) - len(self.ducks) - len(self.path_queued_ducks)
-        seq.add_callback(duration-1, lambda: self.move_to_path_queue(ducky))
+        seq.add_callback(duration, lambda: self.move_to_path_queue(ducky))
         self.animations.fire(ducky, seq)
 
     def enter_scene(self, previous_scene: BaseScene) -> None:
         """Start adding duckies on entering the scene."""
+        self.game_end = datetime.datetime.now() + datetime.timedelta(minutes=2)
+        self.start = datetime.datetime.now()
+
+        self.ui_manager.add_ui_element(AllowButton(self))
+        self.ui_manager.add_ui_element(AnnihilateButton(self))
         if not self.debug:
-            arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*10/constants.DUCKS)
+            arcade.schedule(self.add_a_ducky, len(constants.POINTS_HINT)*7/constants.DUCKS)
+            arcade.schedule(self.validate_a_duck, .5)
+
+    def leave_scene(self, next_scene: BaseScene) -> None:
+        """Called when leaving the scene."""
+        self.ui_manager.unregister_handlers()
 
     def alter_toxicity(self, change_by: int) -> None:
         """Handle toxicity-related changes."""
         self.toxicity += change_by
 
         if self.toxicity == Toxicity.DEADLY:
-            self.end_game()
+            self.game_over()
+            # self.end_game()  # TODO fix/merge with the above
             return
 
         assets = self.toxicity_assets[self.toxicity]
@@ -273,15 +281,16 @@ class DuckScene(BaseScene):
 
         super().draw()
         self.pondhouse.draw()
+        if self.pondhouse_duck:
+            self.pondhouse_duck.draw()
         self.teller_window.draw()
 
     def allow(self) -> None:
         """Allow the current duck into the pond."""
-        if len(self.path_queued_ducks) == 0:
+        if not self.pondhouse_duck:
             return
-        ducky = self.path_queued_ducks.pop(0)
+        ducky = self.pondhouse_duck
 
-        self.pondhouse_ducks.append(ducky)
         self.grant_entry(ducky)
 
         if RULES[self.rule](ducky):
@@ -294,9 +303,9 @@ class DuckScene(BaseScene):
 
     def deny(self) -> None:
         """Deny the current duck from the pond."""
-        if len(self.path_queued_ducks) == 0:
+        if not self.pondhouse_duck:
             return
-        ducky = self.path_queued_ducks.pop(0)
+        ducky = self.pondhouse_duck
 
         self.explode(ducky)
 
@@ -350,11 +359,11 @@ class DuckScene(BaseScene):
     def explode(self, ducky: arcade.Sprite) -> None:
         """Blow up a denied duck."""
         # Super impressive explosions
-        ducky.width = 0
+        self.pondhouse_duck = None
 
     def move_to_path_queue(self, ducky: _sprites.Ducky) -> None:
         """Move the ducky into the path_queue spritelist."""
-        # self.ducks.remove(ducky)
+        self.ducks.remove(ducky)
         self.path_queued_ducks.append(ducky)
         self.animations.kill(ducky)
         self.progress()
@@ -362,26 +371,46 @@ class DuckScene(BaseScene):
     def enter_pondhouse(self, ducky: _sprites.Ducky) -> None:
         """Duckies that are circling outside the pondhouse waiting to be processed."""
         self.path_queued_ducks.remove(ducky)
-        if len(self.pondhouse_ducks) == 0:
-            self.show_human_ducky(ducky)
-        self.pondhouse_ducks.append(ducky)
-        self.animations.fire(ducky, ducky.pondhouse_seq)
+        if len(self.pondhouse_ducks) == 0 and not self.pondhouse_duck:
+            self.pondhouse_duck = ducky
+            self.pondhouse_duck.texture = self.pondhouse_duck.textures[1]
+            seq = ducky.manify()
+            seq.add_callback(seq.total_time, lambda: self.validate_a_duck(ducky))
+            self.animations.fire(ducky, seq)
+        else:
+            self.pondhouse_ducks.append(ducky)
+            self.animations.fire(ducky, ducky.pondhouse_seq)
+
+    def validate_a_duck(self, dt: Optional[float] = 0) -> None:
+        """Move a duck to the teller - change into manduck."""
+        if len(self.pondhouse_ducks) and not self.pondhouse_duck:
+            ducky = choice(self.pondhouse_ducks.sprite_list)
+            self.animations.kill(ducky)
+            self.pondhouse_ducks.remove(ducky)
+            self.pondhouse_duck = ducky
+            self.pondhouse_duck.texture = self.pondhouse_duck.textures[1]
+            seq = ducky.manify()
+            self.animations.fire(ducky, seq)
 
     def grant_entry(self, ducky: Optional[_sprites.Ducky] = None) -> None:
         """Generic method to grant entry. - gateway to the pond."""
-        if self.pondhouse_ducks:
-            duck = ducky or choice(self.pondhouse_ducks)
-            self.pondhouse_ducks.remove(duck)
+        if self.pondhouse_duck:
+            duck = ducky or choice(self.pondhouse_ducks.sprite_list)
+            self.animations.kill(duck)
             if len(self.pond_ducks) >= constants.POND:
                 ducky_out = choice(self.pond_ducks.sprite_list)
                 seq = ducky_out.off_screen()
                 seq.add_callback(seq.total_time, lambda: self.pond_ducks.remove(ducky_out))
                 self.animations.fire(ducky_out, seq)
-            self.pond_ducks.append(duck)
-            self.enter_pond(duck)
+            seq = duck.duckify()
+            seq.add_callback(seq.total_time, lambda: self.enter_pond(duck))
+            self.animations.fire(duck, seq)
 
-    def enter_pond(self, duck: _sprites.Ducky) -> None:
+    def enter_pond(self, duck: Optional[_sprites.Ducky] = None) -> None:
         """Grant a ducky entry into the pond."""
+        duck.texture = duck.textures[0]
+        self.pond_ducks.append(duck)
+        self.pondhouse_duck = None
         self.animations.fire(duck, duck.pond_seq)
 
     def end_game(self) -> None:
@@ -403,16 +432,6 @@ class DuckScene(BaseScene):
             else:
                 self.enter_pondhouse(ducky)
 
-    def show_human_ducky(self, ducky: Optional[_sprites.Ducky]) -> None:
-        """Show the human version of the ducky in the teller. Remove it if None."""
-        print(f"DEBUG: showing human ducky {ducky}")
-        # TODO: actual code
-
-    def destroy_ducky(self, ducky: _sprites.Ducky) -> None:
-        """Trigger the destroy animation on the ducky currently inside the teller."""
-        print(f"DEBUG: destroying ducky {ducky}")
-        # TODO: actual code
-
     def decrease_health(self) -> None:
         """Decrease the player's health points."""
         print("DEBUG: decreasing health")
@@ -430,13 +449,10 @@ class DuckScene(BaseScene):
         self.animations.animations.clear()
         # Stop new duckies
         arcade.unschedule(self.add_a_ducky)
-        # Clear the waiting line
-        while not self.pondhouse_ducks.empty():
-            self.pondhouse_ducks.get()
-        # Remove the ducky from the teller
-        self.show_human_ducky(None)
+        arcade.unschedule(self.validate_a_duck)
+
         # Put the duckies upside down
-        for ducky in chain(self.pond_ducks, self.ducks):
+        for ducky in chain(*self._sprite_lists[1:]):
             ducky.deceased()
 
 
@@ -459,16 +475,17 @@ class MenuButton(UIImageButton):
 
     def __init__(self, scene: "GameOverView"):
         released = load_scaled_texture("menu_released", "assets/overworld/buttons/menu_button.png", 0.18)
+        pressed = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
+        released = load_scaled_texture("allow_pressed", "assets/overworld/buttons/allow_button_depressed.png", 0.18)
         window = arcade.get_window()
         self.scene = scene
-        super().__init__(released, center_x=window.width * 0.575, center_y=window.height * 0.12)
+        super().__init__(released, press_texture=pressed, center_x=window.width * 0.575, center_y=window.height * 0.12)
 
     def on_release(self) -> None:
         """Call the allow action."""
         self.scene.curtains.scenes.pop("game_over_scene")
         self.scene.ui_manager.unregister_handlers()
 
-        self.scene.curtains.add_scene("main_menu", menu.MenuView())
         self.scene.curtains.set_scene("main_menu")
 
 
@@ -480,12 +497,14 @@ class GameOverView(BaseScene):
         self.passed = passed
         self.failed = failed
         self.total_time = datetime.datetime.now() - start_time
+        self.ui_manager = UIManager()
 
     def setup(self) -> None:
         """Setup game over view."""
         self.background = arcade.load_texture("assets/overworld/overworld_deadly.png")
 
-        self.ui_manager = UIManager()
+    def enter_scene(self, previous_scene: BaseScene) -> None:
+        """Called when entering the scene."""
         self.ui_manager.add_ui_element(MenuButton(self))
         self.ui_manager.add_ui_element(QuitButton())
 
