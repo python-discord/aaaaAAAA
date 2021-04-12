@@ -122,20 +122,38 @@ class Ducky(PydisSprite):
 
     def manify(self) -> Sequence:
         """Return a sequence to move the ducky to the pondhouse viewer."""
-        x1, y1 = self.position
-        x3, y3 = constants.SCREEN_WIDTH * .2, constants.SCREEN_HEIGHT * .3
-        x2, y2 = x3 + ((x1 - x3) / 2), y3 + ((y1 - y3) / 2)
-        angle = degrees(sin((x2 - x1) / max((y2 - y1), 1)))
+        x1, y1 = 0, constants.SCREEN_HEIGHT * .3
+        x2, y2 = constants.SCREEN_WIDTH * .175, constants.SCREEN_HEIGHT * .3
+
         seq = Sequence()
-        seq.add_keyframes((0, KeyFrame(position=(x1, y1))),
-                          (2, KeyFrame(position=(x2, y2), width=self.width*3, height=self.height*3, angle=angle)),
-                          (3, KeyFrame(position=(x3, y3), width=self.width*7, height=self.height*7, angle=0)))
-        seq.add_callback(1.5, self.show_manduck)
+        seq.add_keyframes((0, KeyFrame(position=(x1, y1), alpha=0, scale=.21, angle=0)),
+                          (.5, KeyFrame(position=(x1 + 30, y1 + 7), scale=.35, angle=0)))
+        for t, pos in enumerate(range(int(x1), int(x2), 10), start=2):
+            if t % 2:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1 + 7)))
+            else:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1)))
+            seq.add_keyframe((t+1)/2, KeyFrame(position=(x2, y2), angle=0))
+
         return seq
 
-    def show_manduck(self) -> None:
-        """Switch the texture to the manduck."""
-        self.texture = self.textures[1]
+    def duckify(self) -> Sequence:
+        """Return a sequence to move the ducky to the pondhouse viewer."""
+        x1, y1 = self.position
+        x2, y2 = .3 * constants.SCREEN_WIDTH, .3 * constants.SCREEN_HEIGHT
+
+        seq = Sequence()
+        for t, pos in enumerate(range(int(x1), int(x2), 10)):
+            if t % 2:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1 + 7)))
+            else:
+                seq.add_keyframe(t/2, KeyFrame(position=(pos, y1)))
+            seq.add_keyframe((t+1)/2, KeyFrame(position=(x2, y2), angle=0))
+        seq.add_keyframes(
+            ((t+2)/2, KeyFrame(position=(x2, y2), scale=.21)),
+            ((t+3)/2, KeyFrame(position=(x2, y2), scale=.07)))
+
+        return seq
 
     def __repr__(self) -> str:
         """Return debug representation."""
